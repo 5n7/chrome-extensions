@@ -5,6 +5,7 @@ import {
   DEFAULT_BINDINGS,
   findSeekBinding,
   formatCombination,
+  formatOffset,
   isValidSeconds,
   seekBindings,
   toKeyCombination,
@@ -24,7 +25,21 @@ describe("seekBindings", () => {
   beforeEach(() => fakeBrowser.reset());
 
   it("starts with the Default Bindings", async () => {
-    expect(await seekBindings.getValue()).toEqual(DEFAULT_BINDINGS);
+    const bindings = await seekBindings.getValue();
+    expect(
+      bindings.map(
+        (b) => `${formatCombination(b.combination).join("+")} ${formatOffset(b.offset)}`,
+      ),
+    ).toEqual([
+      "← −5s",
+      "→ +5s",
+      "J −10s",
+      "L +10s",
+      "Shift+J −30s",
+      "Shift+L +30s",
+      "Shift+← −60s",
+      "Shift+→ +60s",
+    ]);
   });
 
   it("keeps an emptied list instead of falling back to the defaults", async () => {

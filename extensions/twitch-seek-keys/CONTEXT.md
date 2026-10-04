@@ -21,7 +21,7 @@ Twitch's own 10-second arrow-key seek, which stays in effect on live streams and
 _Avoid_: default seek
 
 **Default Bindings**:
-The preset Seek Bindings present after install and restorable on demand: `←`/`→` 5 s, `j`/`l` 10 s, `Shift+←`/`Shift+→` 60 s.
+The preset Seek Bindings present after install and restorable on demand: `←`/`→` 5 s, `J`/`L` 10 s, `Shift+J`/`Shift+L` 30 s, `Shift+←`/`Shift+→` 60 s.
 _Avoid_: preset, factory settings
 
 **Seekable Video**:

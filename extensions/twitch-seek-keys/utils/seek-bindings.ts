@@ -49,11 +49,14 @@ function binding(
   return { combination: combo, offset: { direction, seconds } };
 }
 
+// Ordered from the finest to the coarsest step, backward before forward.
 export const DEFAULT_BINDINGS: SeekBinding[] = [
   binding(combination("ArrowLeft"), "backward", 5),
   binding(combination("ArrowRight"), "forward", 5),
   binding(combination("KeyJ"), "backward", 10),
   binding(combination("KeyL"), "forward", 10),
+  binding(combination("KeyJ", { shiftKey: true }), "backward", 30),
+  binding(combination("KeyL", { shiftKey: true }), "forward", 30),
   binding(combination("ArrowLeft", { shiftKey: true }), "backward", 60),
   binding(combination("ArrowRight", { shiftKey: true }), "forward", 60),
 ];
