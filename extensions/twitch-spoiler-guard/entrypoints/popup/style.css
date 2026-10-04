@@ -1,0 +1,96 @@
+@import "@repo/ui/globals.css";
+@source "..";
+
+/* Declared here rather than via @fontsource's CSS, which also ships a woff fallback Chrome never needs. */
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/kalam/files/kalam-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/kalam/files/kalam-latin-700-normal.woff2") format("woff2");
+}
+
+/* The popup carries the icon's hand-drawn world: ink on paper, in light only. */
+@theme {
+  --color-paper: #fffdf5;
+  --color-ink: #18181b;
+  --color-twitch: #9146ff;
+  --color-lilac: #ece2ff;
+  --color-rust: #c42b31;
+  --font-hand: "Kalam", "Comic Sans MS", cursive;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-lilac);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-twitch);
+  outline-offset: 3px;
+  border-radius: var(--r, 6px);
+}
+
+/*
+ * An ink outline drawn on a pseudo-element, so the `#wobble` filter roughens the
+ * stroke and fill without distorting the text. Set `--fill` and `--r` per element.
+ */
+@utility wobbly {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border: 2.5px solid var(--color-ink);
+    border-radius: var(--r, 10px);
+    background: var(--fill, transparent);
+    filter: url(#wobble);
+  }
+}
+
+@utility title-squiggle {
+  padding-bottom: 7px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5C20 2 34 7 52 4S88 2 118 5' fill='none' stroke='%239146ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
+    bottom / 100% 7px no-repeat;
+}
+
+/*
+ * Ink spreads out from where the stamp is held, and turning the Guard off waits for it to cover
+ * the stamp. It shows how long is left to hold, so it runs even with reduced motion.
+ */
+@keyframes ink-spread {
+  from {
+    clip-path: circle(0 at var(--ink-x) var(--ink-y));
+  }
+  to {
+    clip-path: circle(var(--ink-radius) at var(--ink-x) var(--ink-y));
+  }
+}
+
+@utility animate-ink-spread {
+  animation: ink-spread 1s linear forwards;
+}

@@ -1,0 +1,51 @@
+/*
+ * Injected through the manifest at document_start, so these rules are in place before Twitch renders.
+ * Each rule waits for the Guard's attribute on <html>, set by the content script.
+ */
+
+/*
+ * Only a VOD's player has a total-duration label, so `:has()` leaves clips and live streams alone
+ * wherever the player sits: a VOD's page, an offline channel's page, or the mini player.
+ * `visibility: hidden` keeps the layout and drops the seek bar from mouse and Tab focus;
+ * `pointer-events: none` keeps it unclickable even if Twitch makes a descendant visible again.
+ */
+:root[data-twitch-spoiler-guard]
+  [data-a-target="video-player"]:has([data-a-target="player-seekbar-duration"])
+  :is(
+    [data-a-target="player-seekbar-duration"],
+    [data-a-target="player-seekbar"],
+    .vod-seekbar-preview-overlay__wrapper,
+    #chapter-select-popover-body .media-row__info-description
+  ) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/*
+ * A VOD card's stats carry no telling attribute; the duration is always the first one, in the
+ * corner right after the thumbnail. Search results link to `/<channel>/video/<id>` and show only
+ * the duration. A card's chapter balloon lists each chapter's length; it renders apart from the
+ * card's link, so it cannot be scoped to VOD cards, but only VOD cards have chapters.
+ */
+:root[data-twitch-spoiler-guard]
+  :is(
+    a[data-a-target="preview-card-image-link"][href^="/videos/"]
+      > div
+      > .tw-aspect
+      + div
+      > .tw-media-card-stat,
+    a[href*="/video/"] .search-result-card__img-wrapper .tw-media-card-stat,
+    .preview-card-game-balloon .media-row__info-description
+  ) {
+  visibility: hidden !important;
+}
+
+/*
+ * The bar across a partly watched VOD's thumbnail, rendered only for a signed-in viewer. Its class
+ * is hashed, so it is matched by role or by a progress-bar name inside the thumbnail link.
+ */
+:root[data-twitch-spoiler-guard]
+  a[data-a-target="preview-card-image-link"][href^="/videos/"]
+  :is([role="progressbar"], [class*="ProgressBar"], [class*="progress-bar"]) {
+  visibility: hidden !important;
+}
