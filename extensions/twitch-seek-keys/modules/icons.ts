@@ -4,11 +4,11 @@ import { resolve } from "node:path";
 import sharp from "sharp";
 import { defineWxtModule } from "wxt/modules";
 
-// Renders each size from the closest SVG master, so the toolbar size gets pixel-fitted artwork
-// instead of a blurry downscale. Each master is drawn at its own size in px.
+// Renders each size from the closest SVG master, so the toolbar sizes (16 px at 1x, 32 px at 2x) get
+// pixel-fitted artwork instead of a blurry downscale. Each master is drawn at its own size in px.
 const MASTERS = {
   16: { path: "assets/icon-16.svg", size: 16 },
-  32: { path: "assets/icon.svg", size: 128 },
+  32: { path: "assets/icon-32.svg", size: 32 },
   48: { path: "assets/icon.svg", size: 128 },
   128: { path: "assets/icon.svg", size: 128 },
 };
