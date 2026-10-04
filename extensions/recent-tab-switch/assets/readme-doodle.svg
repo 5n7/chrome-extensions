@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="170" viewBox="0 0 260 170">
+  <!-- README card art: Ctrl+Tab throws a boomerang from the current tab back to the most recently used one, past the tabs between. -->
+  <defs>
+    <filter id="wobble" x="-10%" y="-20%" width="120%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3"/>
+      <feDisplacementMap in="SourceGraphic" scale="4"/>
+    </filter>
+  </defs>
+  <path d="M8 154C90 152 170 155 252 153" fill="none" stroke="#18181b" stroke-width="3" stroke-linecap="round" filter="url(#wobble)"/>
+  <path d="M14 154C20 154 22 150 22 144L22 128C22 121 26 118 32 118L62 118C68 118 72 121 72 128L72 144C72 150 74 154 80 154" fill="#ff8a3d" stroke="#18181b" stroke-width="3" stroke-linejoin="round" filter="url(#wobble)"/><circle cx="34" cy="136" r="4.5" fill="#18181b"/><path d="M44 136H62" stroke="#18181b" stroke-width="3" stroke-linecap="round"/><path d="M76 154C82 154 84 150 84 144L84 128C84 121 88 118 94 118L124 118C130 118 134 121 134 128L134 144C134 150 136 154 142 154" fill="#fffdf5" stroke="#18181b" stroke-width="3" stroke-linejoin="round" filter="url(#wobble)"/><circle cx="96" cy="136" r="4.5" fill="#18181b"/><path d="M106 136H124" stroke="#18181b" stroke-width="3" stroke-linecap="round"/><path d="M138 154C144 154 146 150 146 144L146 128C146 121 150 118 156 118L186 118C192 118 196 121 196 128L196 144C196 150 198 154 204 154" fill="#fffdf5" stroke="#18181b" stroke-width="3" stroke-linejoin="round" filter="url(#wobble)"/><circle cx="158" cy="136" r="4.5" fill="#18181b"/><path d="M168 136H186" stroke="#18181b" stroke-width="3" stroke-linecap="round"/><path d="M200 154C206 154 208 150 208 144L208 128C208 121 212 118 218 118L248 118C254 118 258 121 258 128L258 144C258 150 260 154 266 154" fill="#ffffff" stroke="#18181b" stroke-width="3" stroke-linejoin="round" filter="url(#wobble)"/><circle cx="220" cy="136" r="4.5" fill="#18181b"/><path d="M230 136H248" stroke="#18181b" stroke-width="3" stroke-linecap="round"/>
+  <path d="M232 110C220 36 160 22 128 22C88 22 52 44 48 104" fill="none" stroke="#18181b" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 9"/>
+  <path d="M39 94L48 108L57 95" fill="none" stroke="#18181b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(112 4) rotate(-20 20 20) scale(.32)" stroke-linecap="round" stroke-linejoin="round" filter="url(#wobble)">
+    <path d="M106 22C70 10 32 16 22 44C14 68 24 94 38 110C46 116 58 110 54 98C44 78 42 62 48 52C56 38 78 36 102 42C116 46 118 26 106 22Z" fill="#ff8a3d" stroke="#18181b" stroke-width="8"/>
+  </g>
+  <g font-family="Kalam, 'Comic Sans MS', cursive" font-weight="700" font-size="15" text-anchor="middle" fill="#18181b">
+    <rect x="96" y="66" width="34" height="26" rx="6" fill="#fff" stroke="#18181b" stroke-width="2.5" filter="url(#wobble)"/>
+    <rect x="134" y="66" width="30" height="26" rx="6" fill="#fff" stroke="#18181b" stroke-width="2.5" filter="url(#wobble)"/>
+    <text x="113" y="84">ctrl</text>
+    <text x="149" y="84">tab</text>
+  </g>
+</svg>

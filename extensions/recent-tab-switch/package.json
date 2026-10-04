@@ -1,0 +1,36 @@
+{
+  "name": "recent-tab-switch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Makes Ctrl+Tab switch to your most recently used tabs, the way Arc and Dia do.",
+  "type": "module",
+  "scripts": {
+    "build": "wxt build",
+    "dev": "wxt",
+    "postinstall": "wxt prepare",
+    "typecheck": "tsc --noEmit",
+    "zip": "wxt zip"
+  },
+  "dependencies": {
+    "@fontsource/kalam": "^5.3.0",
+    "@repo/ui": "workspace:*",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@rolldown/plugin-babel": "^0.2.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@wxt-dev/module-react": "^1.2.2",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "sharp": "^0.35.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "web-ext": "^10.7.0",
+    "wxt": "^0.21.4"
+  }
+}

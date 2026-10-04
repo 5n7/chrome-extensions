@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Pixel-fitted toolbar master: the boomerang's arms reach the slot's edges, two pixels of tangerine inside a one-pixel outline. -->
+  <path d="M4 0h9v1H4zM2 1h2v1H2zM13 1h2v1H13zM1 2h1v1H1zM15 2h1v1H15zM0 3h1v1H0zM4 3h10v1H4zM15 3h1v1H15zM0 4h1v1H0zM3 4h2v1H3zM13 4h2v1H13zM0 5h1v1H0zM3 5h1v1H3zM0 6h1v1H0zM3 6h1v1H3zM0 7h1v1H0zM3 7h1v1H3zM0 8h1v1H0zM3 8h1v1H3zM0 9h1v1H0zM3 9h1v1H3zM0 10h1v1H0zM3 10h1v1H3zM1 11h1v1H1zM4 11h1v1H4zM1 12h1v1H1zM4 12h1v1H4zM1 13h1v1H1zM4 13h1v1H4zM1 14h1v1H1zM4 14h1v1H4zM2 15h2v1H2z" fill="#18181b"/>
+  <path d="M4 1h9v1H4zM2 2h13v1H2zM1 3h3v1H1zM14 3h1v1H14zM1 4h2v1H1zM1 5h2v1H1zM1 6h2v1H1zM1 7h2v1H1zM1 8h2v1H1zM1 9h2v1H1zM1 10h2v1H1zM2 11h2v1H2zM2 12h2v1H2zM2 13h2v1H2zM2 14h2v1H2z" fill="#ff8a3d"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Hand-drawn boomerang that always comes back, like Ctrl+Tab to the last tab; roughened by the shared fixed-seed displacement. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="7"/>
+      <feDisplacementMap in="SourceGraphic" scale="5"/>
+    </filter>
+  </defs>
+  <g filter="url(#rough)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 112C52 96 74 88 104 90" fill="none" stroke="#18181b" stroke-width="4" stroke-dasharray="1 10"/>
+    <path d="M106 22C70 10 32 16 22 44C14 68 24 94 38 110C46 116 58 110 54 98C44 78 42 62 48 52C56 38 78 36 102 42C116 46 118 26 106 22Z" fill="#ff8a3d" stroke="#18181b" stroke-width="6"/>
+    <path d="M92 28C70 24 46 28 36 44M30 58C30 72 34 86 42 98" fill="none" stroke="#18181b" stroke-width="3"/>
+    <path d="M112 64L124 60M110 76L122 78" fill="none" stroke="#18181b" stroke-width="4"/>
+  </g>
+</svg>
