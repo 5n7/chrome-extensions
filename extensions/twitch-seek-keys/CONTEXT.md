@@ -29,5 +29,5 @@ A VOD (including highlights and uploads) or a clip; a live stream is never a See
 _Avoid_: recording, replay
 
 **Seek Indicator**:
-The brief label on the player showing the Seek Offset just applied.
+The brief label on the player showing the Seek Offset just applied; while it stays visible, further seeks in the same direction add to the total shown, and a seek in the other direction starts a new total.
 _Avoid_: OSD, toast, overlay
