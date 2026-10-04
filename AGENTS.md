@@ -7,6 +7,7 @@ Monorepo of personal Chrome extensions built with WXT, React, and shadcn/ui on B
 - `extensions/<name>/` — one WXT project per extension, package name `<name>` (unscoped, so zips are named `<name>-<version>-chrome.zip`).
 - `packages/ui/` — shared shadcn/ui components and the Tailwind theme (`globals.css`).
 - `packages/tsconfig/` — strict base config.
+- `CONTEXT-MAP.md` — index of each extension's domain glossary (`extensions/<name>/CONTEXT.md`); use its terms in code and docs.
 
 ## Adding an extension
 

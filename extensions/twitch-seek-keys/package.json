@@ -1,0 +1,36 @@
+{
+  "name": "twitch-seek-keys",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custom keyboard seek amounts for Twitch VODs and clips.",
+  "type": "module",
+  "scripts": {
+    "build": "wxt build",
+    "dev": "wxt",
+    "postinstall": "wxt prepare",
+    "typecheck": "tsc --noEmit",
+    "zip": "wxt zip"
+  },
+  "dependencies": {
+    "@repo/ui": "workspace:*",
+    "lucide-react": "^1.51.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@rolldown/plugin-babel": "^0.2.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "@wxt-dev/module-react": "^1.2.2",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "happy-dom": "^20.14.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "web-ext": "^10.7.0",
+    "wxt": "^0.21.4"
+  }
+}
