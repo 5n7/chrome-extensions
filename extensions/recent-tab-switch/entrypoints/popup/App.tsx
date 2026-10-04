@@ -150,7 +150,7 @@ function Setup({ code, copyByHand, open, onCopyAndOpen }: SetupProps) {
             type="button"
             onClick={onCopyAndOpen}
           >
-            {copyByHand ? "Open the shortcuts page" : "Copy the code and open the shortcuts page"}
+            {copyByHand ? "Open the shortcuts page" : "Copy the code and open shortcuts"}
           </button>
           <pre className="bg-ink/5 mt-2 max-h-24 overflow-auto rounded-md p-2 font-mono text-[10.5px] leading-snug whitespace-pre-wrap select-all">
             {code}
