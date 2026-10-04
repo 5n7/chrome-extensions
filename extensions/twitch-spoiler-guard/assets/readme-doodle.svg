@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="170" viewBox="0 0 260 170">
+  <!-- README card art: a player bar whose seek bar and total time are taped over, leaving the elapsed time. -->
+  <defs>
+    <filter id="wobble" x="-10%" y="-20%" width="120%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3"/>
+      <feDisplacementMap in="SourceGraphic" scale="4"/>
+    </filter>
+    <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">
+      <rect width="9" height="9" fill="#ece2ff"/>
+      <rect width="2" height="9" fill="#9146ff" opacity=".22"/>
+    </pattern>
+  </defs>
+  <rect x="8" y="22" width="244" height="126" rx="18" fill="#1f1f23" stroke="#18181b" stroke-width="3" filter="url(#wobble)"/>
+  <path d="M32 112L32 132L48 122Z" fill="#efeff1" stroke="#efeff1" stroke-width="2" stroke-linejoin="round"/>
+  <text x="60" y="131" font-family="Kalam, 'Comic Sans MS', cursive" font-size="22" fill="#efeff1">1:23:45 /</text>
+  <!-- Masking tape with torn ends: one strip over the seek bar, one over the total time. -->
+  <path d="M18 50L24 46L30 51L236 42L242 47L246 43L247 70L241 74L236 69L30 79L24 74L19 78Z" fill="url(#hatch)" stroke="#18181b" stroke-width="2.5" stroke-linejoin="round" filter="url(#wobble)"/>
+  <path d="M158 104L163 100L168 105L236 109L241 105L245 110L242 138L237 134L232 139L164 135L159 139L155 134Z" fill="url(#hatch)" stroke="#18181b" stroke-width="2.5" stroke-linejoin="round" filter="url(#wobble)"/>
+</svg>

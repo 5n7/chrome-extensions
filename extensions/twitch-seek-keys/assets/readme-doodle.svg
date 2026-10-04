@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="170" viewBox="0 0 260 170">
+  <!-- README card art: two Seek Binding keycaps above the popup's back/ahead pills. -->
+  <defs>
+    <filter id="wobble" x="-10%" y="-20%" width="120%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3"/>
+      <feDisplacementMap in="SourceGraphic" scale="4"/>
+    </filter>
+  </defs>
+  <g font-family="Kalam, 'Comic Sans MS', cursive" font-weight="700" text-anchor="middle">
+    <rect x="48" y="16" width="64" height="64" rx="12" fill="#fff" stroke="#18181b" stroke-width="3" filter="url(#wobble)"/>
+    <rect x="148" y="16" width="64" height="64" rx="12" fill="#fff" stroke="#18181b" stroke-width="3" filter="url(#wobble)"/>
+    <text x="80" y="61" font-size="34" fill="#18181b">J</text>
+    <text x="180" y="61" font-size="34" fill="#18181b">L</text>
+    <rect x="22" y="106" width="108" height="42" rx="21" fill="#ece2ff" stroke="#18181b" stroke-width="3" filter="url(#wobble)"/>
+    <rect x="138" y="106" width="108" height="42" rx="21" fill="#9146ff" stroke="#18181b" stroke-width="3" filter="url(#wobble)"/>
+    <text x="76" y="134" font-size="20" fill="#18181b">« 10s</text>
+    <text x="192" y="134" font-size="20" fill="#fff">10s »</text>
+  </g>
+</svg>

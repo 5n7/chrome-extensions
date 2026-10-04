@@ -12,12 +12,14 @@
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
+    "readme": "bun scripts/readme.ts",
     "test": "vitest",
     "typecheck": "tsc --noEmit && bun run --filter './extensions/*' --filter './packages/*' typecheck",
     "ui": "bun run --cwd packages/ui shadcn",
     "zip": "bun run --filter './extensions/*' zip"
   },
   "devDependencies": {
+    "@fontsource/kalam": "^5.3.0",
     "@repo/tsconfig": "workspace:*",
     "@types/bun": "^1.4.2",
     "oxfmt": "^0.71.0",
