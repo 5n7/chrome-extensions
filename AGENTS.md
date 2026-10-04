@@ -18,6 +18,7 @@ Templates are deliberately absent until a few extensions exist; model a new one 
 - `tsconfig.json` extends `["./.wxt/tsconfig.json", "@repo/tsconfig/base.json"]` in that order, so the base wins on overlapping options.
 - `wxt.config.ts` sets `imports: false` (explicit imports only) and `webExt.chromiumArgs: ["--user-data-dir=./.wxt/chrome-data"]` for a persistent dev profile.
 - React UI: depend on `@repo/ui`, `react`, `react-dom`; add devDependencies `@rolldown/plugin-babel`, `@tailwindcss/vite`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `@wxt-dev/module-react`, `babel-plugin-react-compiler` (an optional peer, so Bun skips it unless listed), `tailwindcss`. In `wxt.config.ts`, add the `@wxt-dev/module-react` module and `vite` plugins `babel({ presets: [reactCompilerPreset()] })` and `tailwindcss()`.
+- Icon: draw a 128 px master `assets/icon.svg` plus a pixel-fitted toolbar master `assets/icon-16.svg`, then copy `modules/icons.ts` from an existing extension (devDependency `sharp`); WXT auto-loads it to render every manifest size and grey out dev builds.
 - CSS entry: `@import "@repo/ui/globals.css";` followed by `@source "..";` so Tailwind scans the extension's own files.
 - Tests: `vitest.config.ts` with `WxtVitest({ root: import.meta.dirname })` from `wxt/testing/vitest-plugin`; the root `vitest.config.ts` picks it up as a project.
 
