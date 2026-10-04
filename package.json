@@ -1,0 +1,30 @@
+{
+  "name": "chrome-extensions",
+  "private": true,
+  "workspaces": [
+    "extensions/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "bun run --filter './extensions/*' build",
+    "dev": "bun scripts/dev.ts",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit && bun run --filter './extensions/*' --filter './packages/*' typecheck",
+    "ui": "bun run --cwd packages/ui shadcn",
+    "zip": "bun run --filter './extensions/*' zip"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
+    "oxlint-tsgolint": "^7.0.2003",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "packageManager": "bun@1.4.2"
+}
