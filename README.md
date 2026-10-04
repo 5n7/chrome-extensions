@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/readme/banner.svg" alt="chrome-extensions: personal Chrome extensions, one TV at a time." width="880">
+  <img src=".github/readme/banner.svg" alt="chrome-extensions: Personal Chrome extensions, drawn by hand." width="880">
 </p>
 
 Personal Chrome extensions, built with [WXT](https://wxt.dev), React, Tailwind CSS, and shadcn/ui on Bun workspaces.

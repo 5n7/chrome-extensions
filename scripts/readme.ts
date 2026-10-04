@@ -3,7 +3,7 @@ import { mkdir, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 // Draws the README's banner and one card per extension in the icons' hand-drawn world (ink on paper,
-// Kalam lettering, Twitch purple), then lists the cards in README.md. The SVGs embed Kalam, since
+// Kalam lettering, a purple accent), then lists the cards in README.md. The SVGs embed Kalam, since
 // GitHub shows them as images that load no outside fonts, and fill their own paper, so they read
 // the same on light and dark themes.
 
@@ -12,8 +12,9 @@ const outDir = join(root, ".github", "readme");
 
 const INK = "#18181b";
 const PAPER = "#fffdf5";
-const TWITCH = "#9146ff";
+const PURPLE = "#9146ff";
 const WIDTH = 880;
+const SUBTITLE = "Personal Chrome extensions, drawn by hand.";
 // A card's text fits between its icon and its doodle; past these, shorten the name or description.
 const TITLE_CHARS = 21;
 const TAGLINE_CHARS = 36;
@@ -78,7 +79,7 @@ function wrap(text: string, width: number): string[] {
 /** A purple squiggle under a title of roughly `width` px, like the popups' `title-squiggle`. */
 function squiggle(x: number, y: number, width: number): string {
   const step = width / 4;
-  return `<path d="M${x} ${y}c${step / 2} -5 ${step} 3 ${step} 0s${step} -4 ${step * 2} 0s${step / 2} 4 ${step} 0" fill="none" stroke="${TWITCH}" stroke-width="4" stroke-linecap="round"/>`;
+  return `<path d="M${x} ${y}c${step / 2} -5 ${step} 3 ${step} 0s${step} -4 ${step * 2} 0s${step / 2} 4 ${step} 0" fill="none" stroke="${PURPLE}" stroke-width="4" stroke-linecap="round"/>`;
 }
 
 function frame(height: number, body: string, label: string): string {
@@ -125,8 +126,8 @@ ${doodle}`,
 }
 
 function banner(extensions: Extension[]): string {
-  // The extensions' TVs stand on a shelf, with a dashed one waiting for the next; more TVs shrink
-  // to share the shelf.
+  // The extensions' icons stand on a shelf, with a dashed slot waiting for the next; more icons
+  // shrink to share the shelf.
   const step = Math.min(92, (SHELF_END - SHELF_START) / (extensions.length + 1));
   const size = step - 12;
   const top = 196 - size;
@@ -139,24 +140,21 @@ function banner(extensions: Extension[]): string {
     })
     .join("");
   const next = SHELF_START + extensions.length * step;
-  // The dashed TV's box and antennas, in the icon's 128 px proportions.
+  // The dashed slot, in an icon's 128 px proportions.
   const unit = size / 128;
   return frame(
     250,
     `<text x="48" y="112" font-size="56" font-weight="700" fill="${INK}">chrome-extensions</text>
 ${squiggle(48, 130, 470)}
-<text x="50" y="170" font-size="24" fill="${INK}" opacity=".75">Personal Chrome extensions, one TV at a time.</text>
+<text x="50" y="170" font-size="24" fill="${INK}" opacity=".75">${SUBTITLE}</text>
 <text x="50" y="204" font-size="18" fill="${INK}" opacity=".55">WXT · React · Tailwind CSS · shadcn/ui · Bun</text>
 ${shelf}
 <g fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round" filter="url(#wobble)">
-  <g opacity=".45">
-    <rect x="${next + 12 * unit}" y="${top + 24 * unit}" width="${105 * unit}" height="${93 * unit}" rx="${18 * unit}" stroke-dasharray="7 8"/>
-    <path d="M${next + 62 * unit} ${top + 24 * unit}l${-14 * unit} ${-16 * unit}M${next + 66 * unit} ${top + 24 * unit}l${14 * unit} ${-16 * unit}"/>
-  </g>
+  <rect x="${next + 12 * unit}" y="${top + 12 * unit}" width="${104 * unit}" height="${104 * unit}" rx="${22 * unit}" stroke-dasharray="7 8" opacity=".45"/>
   <path d="M${SHELF_START - 20} 206C${SHELF_START + 80} 202 760 203 ${SHELF_END} 205" stroke-width="4"/>
 </g>
-<text x="${next + 64 * unit}" y="${top + 82 * unit}" font-size="${36 * unit}" font-weight="700" fill="${INK}" text-anchor="middle" opacity=".45">?</text>`,
-    "chrome-extensions: personal Chrome extensions, one TV at a time.",
+<text x="${next + 64 * unit}" y="${top + 78 * unit}" font-size="${40 * unit}" font-weight="700" fill="${INK}" text-anchor="middle" opacity=".45">?</text>`,
+    `chrome-extensions: ${SUBTITLE}`,
   );
 }
 
