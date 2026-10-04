@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Hand-drawn TV: smooth paths roughened by a fixed-seed displacement, so every render wobbles the same way. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="7"/>
+      <feDisplacementMap in="SourceGraphic" scale="5"/>
+    </filter>
+  </defs>
+  <g filter="url(#rough)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M62 26C57 20 52 15 47 10M66 26C72 20 77 14 82 8" fill="none" stroke="#18181b" stroke-width="5"/>
+    <circle cx="47" cy="10" r="4.5" fill="#18181b"/>
+    <circle cx="82" cy="8" r="4.5" fill="#18181b"/>
+    <path d="M34 24C58 22 86 22 98 24C111 25 117 31 117 44L116 98C116 111 110 117 97 117C74 118 52 118 31 117C18 116 12 111 12 98L11 46C11 32 18 25 34 24Z" fill="#9146ff" stroke="#18181b" stroke-width="6"/>
+    <path d="M36 35C52 33 68 34 78 35C87 36 91 40 91 50L91 92C91 102 87 107 77 107C62 108 48 108 36 107C27 106 22 102 22 92L21 50C21 40 27 35 36 35Z" fill="#fffdf5" stroke="#18181b" stroke-width="5"/>
+    <path d="M38 57L54 70L38 83ZM57 57L73 70L57 83Z" fill="#18181b" stroke="#18181b" stroke-width="3"/>
+    <circle cx="104" cy="52" r="5.5" fill="#18181b"/>
+    <circle cx="104" cy="70" r="5" fill="none" stroke="#18181b" stroke-width="4"/>
+    <path d="M99 90C102 90 106 91 109 90M99 98C102 98 106 97 109 98" fill="none" stroke="#18181b" stroke-width="3"/>
+  </g>
+</svg>

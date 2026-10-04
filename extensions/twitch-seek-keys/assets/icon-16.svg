@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" shape-rendering="crispEdges">
+  <!-- Pixel-fitted toolbar master: the same TV on whole pixels, painted back to front with no wobble to blur. -->
+  <g fill="#18181b">
+    <path d="M4 0h1v1H4zM5 1h1v1H5zM6 2h1v1H6zM7 3h2v1H7zM9 2h1v1H9zM10 1h1v1h-1zM11 0h1v1h-1z"/>
+    <path d="M2 4h12v1h1v10h-1v1H2v-1H1V5h1z"/>
+  </g>
+  <path d="M3 5h10v1h1v8h-1v1H3v-1H2V6h1z" fill="#9146ff"/>
+  <path d="M4 6h6v1h1v6h-1v1H4v-1H3V7h1z" fill="#fffdf5"/>
+  <path d="M4 7h1v1h1v1h1v1h-1v1h-1v1H4zM8 7h1v1h1v1h1v1h-1v1h-1v1H8zM12 7h1v1h-1zM12 9h1v1h-1z" fill="#18181b"/>
+</svg>
