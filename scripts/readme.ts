@@ -158,11 +158,14 @@ ${shelf}
   );
 }
 
+// Names whose own spelling title case would get wrong.
+const WORDS: Record<string, string> = { youtube: "YouTube" };
+
 function titleCase(name: string): string {
-  return name.replaceAll(
-    /(^|-)(\w)/g,
-    (_, dash: string, letter: string) => `${dash ? " " : ""}${letter.toUpperCase()}`,
-  );
+  return name
+    .split("-")
+    .map((word) => WORDS[word] ?? `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(" ");
 }
 
 const extensionsDir = join(root, "extensions");

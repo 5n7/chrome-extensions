@@ -14,6 +14,8 @@ Personal Chrome extensions, built with [WXT](https://wxt.dev), React, Tailwind C
 
 <a href="extensions/twitch-spoiler-guard"><img src=".github/readme/twitch-spoiler-guard.svg" alt="Twitch Spoiler Guard: Hides the seek bar and total time on Twitch VODs, so their length never spoils the ending." width="880"></a>
 
+<a href="extensions/youtube-auto-speed"><img src=".github/readme/youtube-auto-speed.svg" alt="YouTube Auto Speed: Plays each YouTube video at the speed your title and channel rules pick." width="880"></a>
+
 <!-- extensions:end -->
 
 ## Development

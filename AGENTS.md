@@ -20,7 +20,7 @@ Templates are deliberately absent until a few extensions exist; model a new one 
 - React UI: depend on `@repo/ui`, `react`, `react-dom`; add devDependencies `@rolldown/plugin-babel`, `@tailwindcss/vite`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `@wxt-dev/module-react`, `babel-plugin-react-compiler` (an optional peer, so Bun skips it unless listed), `tailwindcss`. In `wxt.config.ts`, add the `@wxt-dev/module-react` module and `vite` plugins `babel({ presets: [reactCompilerPreset()] })` and `tailwindcss()`.
 - Icon: draw a 128 px master `assets/icon.svg` plus pixel-fitted toolbar masters `assets/icon-16.svg` and `assets/icon-32.svg` (Chrome's toolbar uses 32 px on 2x screens), then copy `modules/icons.ts` from an existing extension (devDependency `sharp`); WXT auto-loads it to render every manifest size and grey out dev builds.
 - README card: draw `assets/readme-doodle.svg` (260 × 170, in the icon's style) showing what the extension does, then run `bun run readme` from the root to redraw `.github/readme/` and the README's extension list from each extension's icon, doodle, and `package.json` description.
-- CSS entry: `@import "@repo/ui/globals.css";` followed by `@source "..";` so Tailwind scans the extension's own files.
+- CSS entry: `@import "@repo/ui/globals.css";` followed by `@source "..";` so Tailwind scans the extension's own files; widen it to the extension root (`"../.."` from `entrypoints/<page>/`) once shared components live outside `entrypoints/`.
 - Tests: `vitest.config.ts` with `WxtVitest({ root: import.meta.dirname })` from `wxt/testing/vitest-plugin`; the root `vitest.config.ts` picks it up as a project.
 
 ## Conventions

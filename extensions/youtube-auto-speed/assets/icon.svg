@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Hand-drawn play button dashing forward with speed lines behind it; roughened by the shared fixed-seed displacement. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="7"/>
+      <feDisplacementMap in="SourceGraphic" scale="5"/>
+    </filter>
+  </defs>
+  <g filter="url(#rough)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 44H34M4 64H36M14 84H34" fill="none" stroke="#18181b" stroke-width="6"/>
+    <path d="M50 22C50 17 55 14 60 17L112 57C117 61 117 67 112 71L60 111C55 114 50 111 50 106Z" fill="#ff0033" stroke="#18181b" stroke-width="6"/>
+    <path d="M62 38C62 48 62 58 63 66" fill="none" stroke="#fffdf5" stroke-width="5" opacity=".85"/>
+  </g>
+</svg>

@@ -1,0 +1,96 @@
+/* The popup and options page carry the icon's hand-drawn world: ink on paper, in light only. */
+
+/* Declared here rather than via @fontsource's CSS, which also ships a woff fallback Chrome never needs. */
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/kalam/files/kalam-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/kalam/files/kalam-latin-700-normal.woff2") format("woff2");
+}
+
+@theme {
+  --color-paper: #fffdf5;
+  --color-paper-deep: #f4efdf;
+  --color-ink: #18181b;
+  --color-youtube: #ff0033;
+  --color-blush: #ffe0e7;
+  --color-rust: #c42b31;
+  --color-rust-tint: #ffe9e7;
+  --font-hand: "Kalam", "Comic Sans MS", cursive;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-blush);
+}
+
+:is(button, select, input, [role="button"]) {
+  cursor: pointer;
+}
+
+input[type="text"] {
+  cursor: text;
+}
+
+:is(button, select, a):focus-visible {
+  outline: 2px solid var(--color-youtube);
+  outline-offset: 3px;
+  border-radius: var(--r, 6px);
+}
+
+/*
+ * An ink outline drawn on a pseudo-element, so the `#wobble` filter roughens the
+ * stroke and fill without distorting the text. Set `--fill` and `--r` per element.
+ */
+@utility wobbly {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border: 2.5px solid var(--edge, var(--color-ink));
+    border-radius: var(--r, 10px);
+    background: var(--fill, transparent);
+    filter: url(#wobble);
+  }
+}
+
+@keyframes wiggle {
+  25% {
+    rotate: -1.6deg;
+  }
+  75% {
+    rotate: 1.6deg;
+  }
+}
+
+@utility animate-wiggle-loop {
+  animation: wiggle 1.2s ease-in-out infinite;
+}
+
+@utility title-squiggle {
+  padding-bottom: 7px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5C20 2 34 7 52 4S88 2 118 5' fill='none' stroke='%23ff0033' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
+    bottom / 100% 7px no-repeat;
+}
