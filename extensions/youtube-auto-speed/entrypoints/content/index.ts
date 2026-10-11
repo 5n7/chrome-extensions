@@ -61,9 +61,8 @@ export default defineContentScript({
     let synced = false;
     let session: Session | undefined;
     const indicator = createSpeedIndicator();
-    const ports = new Set<Browser.runtime.Port>();
-    // The state last posted to the open popups, so an unchanged one is not posted again.
-    let posted = "";
+    // Each open popup, with the state last posted to it, so an unchanged one is not posted again.
+    const ports = new Map<Browser.runtime.Port, string | undefined>();
     // Codes whose keydown was taken over, so only their keyup is hidden from YouTube too.
     const intercepted = new Set<string>();
     // Plain timers, cleared on invalidation: `ctx.setTimeout` adds an invalidation listener per
@@ -74,11 +73,11 @@ export default defineContentScript({
     // Listening before the settings load, so a popup opened meanwhile still finds this tab.
     const onConnect = (port: Browser.runtime.Port) => {
       if (port.name !== POPUP_PORT) return;
-      ports.add(port);
+      ports.set(port, undefined);
       port.onDisconnect.addListener(() => ports.delete(port));
       // The only message is `PickedMessage`.
       port.onMessage.addListener(() => void takePick());
-      port.postMessage(pageState());
+      publish();
     };
     browser.runtime.onConnect.addListener(onConnect);
 
@@ -113,9 +112,11 @@ export default defineContentScript({
       if (ports.size === 0) return;
       const state = pageState();
       const json = JSON.stringify(state);
-      if (json === posted) return;
-      posted = json;
-      for (const port of ports) port.postMessage(state);
+      for (const [port, posted] of ports) {
+        if (posted === json) continue;
+        ports.set(port, json);
+        port.postMessage(state);
+      }
     }
 
     /** The Speed Lock: once outside changes to the rate settle, set it back to the applied Speed. */
@@ -168,9 +169,11 @@ export default defineContentScript({
       const { facts } = session.target;
       const handle = facts.handle ?? readHandle(data, details);
       const title = data.title || undefined;
-      if (handle === facts.handle && title === facts.title) return;
-      session.target = learnFacts(session.target, { handle, title }, settings);
-      if (handle === undefined || !data.author) return;
+      if (handle !== facts.handle || title !== facts.title) {
+        session.target = learnFacts(session.target, { handle, title }, settings);
+      }
+      // The name can arrive after the handle, so it is checked on its own.
+      if (handle === undefined || !data.author || session.channelName === data.author) return;
       session.channelName = data.author;
       void rememberChannelName(handle, data.author);
     }

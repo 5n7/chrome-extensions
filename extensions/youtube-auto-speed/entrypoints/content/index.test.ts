@@ -13,7 +13,7 @@ import {
   type PlayerVideo,
 } from "@/utils/player-bridge";
 import type { ChannelRule } from "@/utils/rules";
-import { saveSetting } from "@/utils/settings";
+import { channelName, channelNamesItem, saveSetting } from "@/utils/settings";
 import type { Speed } from "@/utils/speed";
 
 import contentScript from "./index";
@@ -56,6 +56,7 @@ function openPopup() {
   };
   connect.fire(port);
   return {
+    close: () => disconnect.fire(port),
     get last() {
       return received.at(-1);
     },
@@ -247,5 +248,43 @@ describe("content script", () => {
     await popup.picked();
     expect(video().playbackRate).toBe(2);
     expect(popup.last).toEqual(ready(2, { handle: "@dailylisp", kind: "channel" }));
+  });
+
+  it("records the channel name once reported, even after the handle and title", async () => {
+    await start({ ...LISP, video: { ...LISP_VIDEO, author: "" } });
+    const popup = openPopup();
+    expect(popup.last).toEqual({ ...ready(1, { kind: "default" }), channelName: "@DailyLisp" });
+    report = LISP;
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(popup.last).toEqual(ready(1, { kind: "default" }));
+    expect(channelName(await channelNamesItem.getValue(), "@DailyLisp")).toBe("Daily Lisp Talks");
+  });
+
+  it("keeps a popup up to date with changes that an earlier popup already saw", async () => {
+    await saveSetting("channelRules", [LISP_RULE]);
+    await start(LISP);
+    const first = openPopup();
+    await vi.advanceTimersByTimeAsync(1000);
+    first.close();
+    press("KeyD", "d");
+    const second = openPopup();
+    expect(second.last).toEqual(ready(2.5, { kind: "manual" }));
+    await second.picked();
+    expect(video().playbackRate).toBe(2);
+    expect(second.last).toEqual(ready(2, { handle: "@dailylisp", kind: "channel" }));
+  });
+
+  it("keeps two open popups up to date when the second opens on a state not yet posted", async () => {
+    await start({ video: { ...LISP_VIDEO, author: "" } });
+    const first = openPopup();
+    await vi.advanceTimersByTimeAsync(5100);
+    // Past the read timeout, which the next look, a second later, would post.
+    const second = openPopup();
+    expect(second.last).toEqual({ kind: "unreadable" });
+    // An ad restarts the wait for the channel, so reading it no longer times out.
+    player().classList.add("ad-showing");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(first.last).toEqual({ kind: "loading" });
+    expect(second.last).toEqual({ kind: "loading" });
   });
 });
