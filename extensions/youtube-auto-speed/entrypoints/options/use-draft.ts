@@ -11,7 +11,7 @@ export function useDraft(
   value: string,
   onCommit: (text: string) => void,
   normalize: (text: string) => string = (text) => text,
-): { draft: string; inputProps: InputHTMLAttributes<HTMLInputElement> } {
+): { text: string; inputProps: InputHTMLAttributes<HTMLInputElement> } {
   // Undefined while nothing is typed, so the field follows the saved value, changes from elsewhere included.
   const [draft, setDraft] = useState<string>();
 
@@ -22,7 +22,7 @@ export function useDraft(
     if (next !== value) onCommit(next);
   }
 
-  // An Effect Event, so a commit that fires later still sees the latest rules rather than stale ones.
+  // An Effect Event, so a commit that fires later still sees the latest `value` and `onCommit`.
   const commitLater = useEffectEvent(commit);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function useDraft(
 
   const text = draft ?? value;
   return {
-    draft: text,
+    text,
     inputProps: {
       value: text,
       onBlur: commit,

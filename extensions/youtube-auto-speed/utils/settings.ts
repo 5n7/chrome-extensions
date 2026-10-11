@@ -8,7 +8,7 @@ import { isSpeed, type Speed } from "./speed";
 // never rewrites the others. Reads go through the `read*` guards, since another device may store anything.
 
 export const defaultSpeedItem = storage.defineItem<unknown>("sync:defaultSpeed");
-export const titleRulesItem = storage.defineItem<unknown>("sync:titleRules");
+const titleRulesItem = storage.defineItem<unknown>("sync:titleRules");
 export const channelRulesItem = storage.defineItem<unknown>("sync:channelRules");
 export const shortcutsItem = storage.defineItem<unknown>("sync:shortcuts");
 
@@ -20,7 +20,7 @@ export const channelNamesItem = storage.defineItem<Record<string, string>>("loca
   fallback: {},
 });
 
-export const DEFAULT_SPEED: Speed = 1;
+const DEFAULT_SPEED: Speed = 1;
 
 export interface Settings extends Rules {
   shortcuts: Shortcuts;
@@ -33,7 +33,7 @@ export const INITIAL_SETTINGS: Settings = {
   shortcuts: DEFAULT_SHORTCUTS,
 };
 
-export function readDefaultSpeed(stored: unknown): Speed {
+function readDefaultSpeed(stored: unknown): Speed {
   return isSpeed(stored) ? stored : DEFAULT_SPEED;
 }
 

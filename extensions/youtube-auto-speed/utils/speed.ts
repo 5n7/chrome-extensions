@@ -12,8 +12,10 @@ export function formatSpeed(speed: Speed): string {
   return `${speed.toFixed(1)}x`;
 }
 
+export type Direction = "down" | "up";
+
 /** The next Speed in the direction, or the same Speed at either end. */
-export function stepSpeed(speed: Speed, direction: "down" | "up"): Speed {
+export function stepSpeed(speed: Speed, direction: Direction): Speed {
   const index = SPEEDS.indexOf(speed) + (direction === "up" ? 1 : -1);
   return SPEEDS[index] ?? speed;
 }

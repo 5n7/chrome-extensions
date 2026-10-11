@@ -5,8 +5,7 @@ import {
   type Rules,
   type VideoFacts,
 } from "./rules";
-import type { Direction } from "./shortcuts";
-import { stepSpeed, type Speed } from "./speed";
+import { stepSpeed, type Direction, type Speed } from "./speed";
 
 /** What the extension knows and has decided about the Target Video in a tab. */
 export interface Target {

@@ -1,13 +1,12 @@
 import { defineContentScript } from "#imports";
 import {
-  PLAYER_SELECTOR,
   REQUEST_EVENT,
   RESPONSE_EVENT,
   type PlayerDetails,
   type PlayerReport,
   type PlayerVideo,
 } from "@/utils/player-bridge";
-import { YOUTUBE_ORIGIN } from "@/utils/youtube";
+import { PLAYER_SELECTOR, YOUTUBE_ORIGIN } from "@/utils/youtube";
 
 interface YouTubePlayer extends HTMLElement {
   getVideoData?: () => { author?: string; isLive?: boolean; title?: string; video_id?: string };

@@ -1,12 +1,11 @@
 import { isRecord } from "./is-record";
+import type { Direction } from "./speed";
 
 /** Matched by physical key (`code`), so Shift or an IME never changes which key it is. */
 export type KeyCombination = Pick<
   KeyboardEvent,
   "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey"
 >;
-
-export type Direction = "down" | "up";
 
 export interface Shortcuts {
   speedDown: KeyCombination;
@@ -111,7 +110,6 @@ export function readShortcuts(stored: unknown): Shortcuts {
 }
 
 function formatKey(code: string): string {
-  if (code === "Space") return "Space";
   return KEY_LABELS[code] ?? code.replace(/^(Key|Digit|Numpad)/, "");
 }
 

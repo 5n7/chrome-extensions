@@ -1,6 +1,8 @@
 import { cn } from "@repo/ui/lib/utils";
-import { PlusIcon } from "lucide-react";
+import { ChevronDownIcon, PlusIcon } from "lucide-react";
 import type { InputHTMLAttributes, ReactNode, Ref } from "react";
+
+import { formatSpeed, isSpeed, SPEEDS, type Speed } from "@/utils/speed";
 
 /** Why a rule is skipped: a `hint` while it is still being filled in, an `error` when it is wrong. */
 export interface Problem {
@@ -45,6 +47,42 @@ export function RuleField({
         spellCheck={false}
         type="text"
         {...inputProps}
+      />
+    </label>
+  );
+}
+
+/** A native select dressed as an ink pill, so it keeps the browser's keyboard and screen-reader support. */
+export function SpeedSelect({
+  label,
+  speed,
+  onChange,
+}: {
+  label: string;
+  speed: Speed;
+  onChange: (speed: Speed) => void;
+}) {
+  return (
+    <label className="wobbly font-hand relative block [--fill:#fff] [--r:999px] focus-within:[--edge:var(--color-youtube)]">
+      <span className="sr-only">{label}</span>
+      <select
+        className="w-full appearance-none bg-transparent py-2 pr-7 pl-3.5 text-base leading-none font-bold outline-none"
+        value={speed}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          if (isSpeed(next)) onChange(next);
+        }}
+      >
+        {SPEEDS.map((option) => (
+          <option key={option} value={option}>
+            {formatSpeed(option)}
+          </option>
+        ))}
+      </select>
+      <ChevronDownIcon
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2"
+        strokeWidth={2.6}
       />
     </label>
   );

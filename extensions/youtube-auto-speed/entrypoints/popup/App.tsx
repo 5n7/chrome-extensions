@@ -102,8 +102,9 @@ export function App() {
   }
 
   function pick(rules: ChannelRule[], handle: string, speed: Speed) {
-    const next = rule
-      ? rules.with(rules.indexOf(rule), { ...rule, speed })
+    const existing = findChannelRule(rules, handle);
+    const next = existing
+      ? rules.with(rules.indexOf(existing), { ...existing, speed })
       : [...rules, { handle, id: newRuleId(), speed }];
     void save(next, `Saved ${formatSpeed(speed)} for ${handle}.`).then((saved) => {
       if (saved) notifyPicked();

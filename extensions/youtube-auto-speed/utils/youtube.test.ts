@@ -36,20 +36,37 @@ afterEach(() => {
 describe("findTargetVideoId", () => {
   it("takes a watch page's video from its URL, even while an ad reports another", () => {
     history.replaceState(null, "", "/watch?v=abc&t=10");
-    expect(findTargetVideoId("ad123", undefined)).toBe("abc");
+    expect(findTargetVideoId({ video: video({ videoId: "ad123" }) }, undefined)).toBe("abc");
+  });
+
+  it("never takes a live stream, even while an ad plays before it", () => {
+    history.replaceState(null, "", "/watch?v=abc");
+    expect(findTargetVideoId({ video: video({ isLive: true }) }, undefined)).toBeUndefined();
+    const details = { isLive: true, videoId: "abc" };
+    const ad = video({ videoId: "ad123" });
+    expect(findTargetVideoId({ details, video: ad }, undefined)).toBeUndefined();
+    expect(
+      findTargetVideoId({ details: { ...details, isLive: false }, video: ad }, undefined),
+    ).toBe("abc");
+  });
+
+  it("ignores details left over from a live stream watched before", () => {
+    history.replaceState(null, "", "/watch?v=abc");
+    const details = { isLive: true, videoId: "previous" };
+    expect(findTargetVideoId({ details, video: video() }, undefined)).toBe("abc");
   });
 
   it("finds none on other pages", () => {
     history.replaceState(null, "", "/shorts/abc");
-    expect(findTargetVideoId("abc", "abc")).toBeUndefined();
+    expect(findTargetVideoId({ video: video() }, "abc")).toBeUndefined();
   });
 
   it("follows the video playing on in the miniplayer, but not an ad in it", () => {
     history.replaceState(null, "", "/");
     document.body.innerHTML = `<ytd-app miniplayer-is-active><div id="movie_player"></div></ytd-app>`;
-    expect(findTargetVideoId("next", "abc")).toBe("next");
+    expect(findTargetVideoId({ video: video({ videoId: "next" }) }, "abc")).toBe("next");
     document.querySelector("#movie_player")?.classList.add("ad-showing");
-    expect(findTargetVideoId("ad123", "abc")).toBe("abc");
+    expect(findTargetVideoId({ video: video({ videoId: "ad123" }) }, "abc")).toBe("abc");
   });
 });
 

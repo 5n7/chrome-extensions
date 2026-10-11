@@ -1,7 +1,10 @@
-import { PLAYER_SELECTOR, type PlayerDetails, type PlayerVideo } from "./player-bridge";
+import type { PlayerDetails, PlayerReport, PlayerVideo } from "./player-bridge";
 import { normalizeHandle } from "./rules";
 
 export const YOUTUBE_ORIGIN = "https://www.youtube.com";
+
+/** The watch-page player; Shorts, hover previews, and channel trailers use other players. */
+export const PLAYER_SELECTOR = "#movie_player";
 
 /** Fired as YouTube navigates without reloading or loads a page's data. */
 export const NAVIGATION_EVENTS = ["yt-navigate-finish", "yt-page-data-updated"] as const;
@@ -30,10 +33,22 @@ export function isWatchContext(): boolean {
 
 /**
  * The id of the Target Video: the one a watch page's URL names, even while an ad plays before it,
- * or the one playing on in the miniplayer after leaving the watch page. `reported` is the video
- * the player itself says is loaded, and `current` the Target Video so far.
+ * or the one playing on in the miniplayer after leaving the watch page, unless it is live. `report`
+ * is what the player itself says is loaded, and `current` the Target Video so far.
  */
 export function findTargetVideoId(
+  report: PlayerReport,
+  current: string | undefined,
+): string | undefined {
+  const videoId = findWatchedVideoId(report.video?.videoId, current);
+  if (videoId === undefined) return undefined;
+  const live = [report.video, report.details].some(
+    (part) => part?.videoId === videoId && part.isLive,
+  );
+  return live ? undefined : videoId;
+}
+
+function findWatchedVideoId(
   reported: string | undefined,
   current: string | undefined,
 ): string | undefined {

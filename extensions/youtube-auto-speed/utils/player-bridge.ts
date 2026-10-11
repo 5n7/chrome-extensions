@@ -8,9 +8,6 @@ import { isRecord } from "./is-record";
 export const REQUEST_EVENT = "youtube-auto-speed:request";
 export const RESPONSE_EVENT = "youtube-auto-speed:response";
 
-/** The watch-page player; Shorts, hover previews, and channel trailers use other players. */
-export const PLAYER_SELECTOR = "#movie_player";
-
 /** The video loaded in the watch-page player right now, which may be an ad. */
 export interface PlayerVideo {
   videoId: string;

@@ -56,5 +56,6 @@ describe("formatCombination", () => {
     expect(formatCombination(combination("KeyS", { shiftKey: true }))).toEqual(["Shift", "S"]);
     expect(formatCombination(combination("ArrowLeft"))).toEqual(["←"]);
     expect(formatCombination(combination("Comma"))).toEqual([","]);
+    expect(formatCombination(combination("Space"))).toEqual(["Space"]);
   });
 });

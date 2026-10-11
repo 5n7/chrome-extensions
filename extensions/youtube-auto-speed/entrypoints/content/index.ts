@@ -41,33 +41,35 @@ const READ_TIMEOUT_MS = 5000;
 // A change made by anything else is reverted once it settles, so a burst reverts only once.
 const LOCK_DELAY_MS = 100;
 
+/** The Target Video playing in this tab, and what this script tracks while it plays. */
+interface Session {
+  target: Target;
+  /** Whether the player has reported the Target Video itself, which also shows it is not live. */
+  reported: boolean;
+  channelName?: string;
+  /** When reading the Target Video began, ads before it aside, so reading it can time out. */
+  readingSince: number;
+  /** The Speed last set on the Target Video, which the Speed Lock holds it to. */
+  applied?: Speed;
+}
+
 export default defineContentScript({
   matches: [`${YOUTUBE_ORIGIN}/*`],
   async main(ctx) {
     let settings: Settings = INITIAL_SETTINGS;
     // Whether the page has been looked at once, before which a popup hears "loading", not "none".
     let synced = false;
-    let target: Target | undefined;
-    // Whether the player has reported the Target Video itself, which also shows it is not live.
-    let reported = false;
-    let channelName: string | undefined;
-    // When reading the Target Video began, ads before it aside, so reading it can time out.
-    let readingSince = 0;
-    // The Speed last set on the Target Video, which the Speed Lock holds it to.
-    let applied: Speed | undefined;
+    let session: Session | undefined;
     const indicator = createSpeedIndicator();
     const ports = new Set<Browser.runtime.Port>();
     // The state last posted to the open popups, so an unchanged one is not posted again.
     let posted = "";
     // Codes whose keydown was taken over, so only their keyup is hidden from YouTube too.
     const intercepted = new Set<string>();
+    // Plain timers, cleared on invalidation: `ctx.setTimeout` adds an invalidation listener per
+    // call and never removes it, and this script re-arms its poll every second or sooner.
     let lockTimer: ReturnType<typeof setTimeout> | undefined;
     let pollTimer: ReturnType<typeof setTimeout> | undefined;
-    ctx.onInvalidated(() => {
-      indicator.remove();
-      clearTimeout(lockTimer);
-      clearTimeout(pollTimer);
-    });
 
     // Listening before the settings load, so a popup opened meanwhile still finds this tab.
     const onConnect = (port: Browser.runtime.Port) => {
@@ -80,19 +82,23 @@ export default defineContentScript({
     };
     browser.runtime.onConnect.addListener(onConnect);
 
-    /** Whether the extension controls the player now: the Target Video itself, or an ad within it. */
-    function controlling(): boolean {
-      return target !== undefined && (reported || isAdShowing());
+    /** The session while the extension controls the player: the Target Video itself, or an ad within it. */
+    function controlled(): Session | undefined {
+      return session && (session.reported || isAdShowing()) ? session : undefined;
+    }
+
+    function timedOut({ readingSince }: Session): boolean {
+      return performance.now() - readingSince > READ_TIMEOUT_MS;
     }
 
     function pageState(): PageState {
       if (!synced) return { kind: "loading" };
-      if (!target) return { kind: "none" };
+      if (!session) return { kind: "none" };
+      const { channelName, target } = session;
       const source = currentSource(target);
       const { handle } = target.facts;
       if (!source || handle === undefined) {
-        const timedOut = performance.now() - readingSince > READ_TIMEOUT_MS;
-        return { kind: timedOut ? "unreadable" : "loading" };
+        return { kind: timedOut(session) ? "unreadable" : "loading" };
       }
       return {
         kind: "ready",
@@ -117,7 +123,8 @@ export default defineContentScript({
       clearTimeout(lockTimer);
       lockTimer = setTimeout(() => {
         const video = findPlayerVideo();
-        if (!video || applied === undefined || !controlling()) return;
+        const applied = controlled()?.applied;
+        if (!video || applied === undefined) return;
         if (video.playbackRate !== applied) video.playbackRate = applied;
       }, LOCK_DELAY_MS);
     }
@@ -127,17 +134,19 @@ export default defineContentScript({
      * a `nudge` when a Speed Shortcut hits a limit.
      */
     function apply(nudge = false) {
-      if (!target || !controlling()) return;
+      const current = controlled();
+      if (!current) return;
       const player = findPlayer();
       const video = findPlayerVideo();
       if (!player || !video) return;
-      const speed = currentSpeed(target, settings);
-      if (speed !== applied) {
-        applied = speed;
+      const speed = currentSpeed(current.target, settings);
+      const changed = speed !== current.applied;
+      if (changed) {
+        current.applied = speed;
         video.playbackRate = speed;
+      }
+      if (changed || nudge) {
         indicator.show(player, speed, nudge);
-      } else if (nudge) {
-        indicator.show(player, speed, true);
       } else if (video.playbackRate !== speed) {
         holdSpeed();
       }
@@ -146,78 +155,74 @@ export default defineContentScript({
     /** Ends the Target Video, handing the player back to YouTube's normal speed if it was changed. */
     function release() {
       const video = findPlayerVideo();
-      if (video && applied !== undefined) video.playbackRate = 1;
+      if (video && session?.applied !== undefined) video.playbackRate = 1;
       clearTimeout(lockTimer);
-      target = undefined;
-      reported = false;
-      channelName = undefined;
-      readingSince = 0;
-      applied = undefined;
+      session = undefined;
       indicator.hide();
     }
 
     /** Records what the player reports about the Target Video; an ad or the previous video says nothing. */
     function learn(data: PlayerVideo, details: PlayerDetails | undefined) {
-      if (!target || data.videoId !== target.videoId) return;
-      reported = true;
-      const handle = target.facts.handle ?? readHandle(data, details);
+      if (!session || data.videoId !== session.target.videoId) return;
+      session.reported = true;
+      const { facts } = session.target;
+      const handle = facts.handle ?? readHandle(data, details);
       const title = data.title || undefined;
-      if (handle === target.facts.handle && title === target.facts.title) return;
-      target = learnFacts(target, { handle, title }, settings);
+      if (handle === facts.handle && title === facts.title) return;
+      session.target = learnFacts(session.target, { handle, title }, settings);
       if (handle === undefined || !data.author) return;
-      channelName = data.author;
+      session.channelName = data.author;
       void rememberChannelName(handle, data.author);
     }
 
     function sync() {
       clearTimeout(pollTimer);
       // Elsewhere no Target Video can play, so the player is not worth asking.
-      const { details, video: data } = isWatchContext() ? readPlayer() : {};
-      let videoId = findTargetVideoId(data?.videoId, target?.videoId);
-      // A live stream is never a Target Video, so its speed is left alone. The details tell even
-      // while an ad plays before it.
-      const live =
-        (data?.videoId === videoId && data?.isLive) ||
-        (details?.videoId === videoId && details?.isLive);
-      if (live) videoId = undefined;
-      if (videoId !== target?.videoId) {
+      const report = isWatchContext() ? readPlayer() : {};
+      const videoId = findTargetVideoId(report, session?.target.videoId);
+      if (videoId !== session?.target.videoId) {
         release();
-        if (videoId !== undefined) target = startTarget(videoId);
+        if (videoId !== undefined) {
+          session = {
+            readingSince: performance.now(),
+            reported: false,
+            target: startTarget(videoId),
+          };
+        }
       }
       // Reading the video can only start once the ads before it are over.
-      if (target && (readingSince === 0 || isAdShowing())) readingSince = performance.now();
-      if (data) learn(data, details);
+      if (session && isAdShowing()) session.readingSince = performance.now();
+      if (report.video) learn(report.video, report.details);
       apply();
       synced = true;
       // Also while nothing changes, so the popup learns when reading the video timed out.
       publish();
-      // Look again soon while the rules wait on facts, until reading the video has timed out.
       const pending =
-        target !== undefined &&
-        target.ruleSpeed === undefined &&
-        performance.now() - readingSince <= READ_TIMEOUT_MS;
+        session !== undefined && session.target.ruleSpeed === undefined && !timedOut(session);
       pollTimer = setTimeout(sync, pending ? PENDING_POLL_MS : IDLE_POLL_MS);
     }
 
-    function adoptSettings(next: Settings, dropManualSpeed: boolean) {
+    function adoptSettings(next: Settings) {
       const previous = settings;
       settings = next;
-      if (!target) return;
-      target = applyRules(target, previous, next);
-      if (dropManualSpeed) target = { ...target, manualSpeed: undefined };
+      if (!session) return;
+      session.target = applyRules(session.target, previous, next);
       apply();
       publish();
     }
 
     /** A speed picked in the popup is meant for this video now, so it replaces any Manual Speed. */
     async function takePick() {
-      adoptSettings(await getSettings(), true);
+      const next = await getSettings();
+      if (session) session.target = { ...session.target, manualSpeed: undefined };
+      adoptSettings(next);
     }
 
-    const unwatchSettings = watchSettings((change) =>
-      adoptSettings({ ...settings, ...change }, false),
-    );
+    const unwatchSettings = watchSettings((change) => adoptSettings({ ...settings, ...change }));
     ctx.onInvalidated(() => {
+      indicator.remove();
+      clearTimeout(lockTimer);
+      clearTimeout(pollTimer);
       // Once the extension reloads, this script is orphaned and any chrome.* call throws; its
       // listeners can no longer fire, so there is nothing to remove.
       if (!browser.runtime?.id) return;
@@ -227,7 +232,7 @@ export default defineContentScript({
     settings = await getSettings();
 
     for (const type of NAVIGATION_EVENTS) {
-      ctx.addEventListener(document, type as keyof DocumentEventMap, sync);
+      ctx.addEventListener(document, type, sync);
     }
     // Media events do not bubble, but a capture listener on the document still sees them.
     for (const type of ["loadedmetadata", "loadstart", "playing"] as const) {
@@ -241,7 +246,7 @@ export default defineContentScript({
       "ratechange",
       (event) => {
         if (event.target !== findPlayerVideo()) return;
-        if (applied !== undefined && controlling()) holdSpeed();
+        if (controlled()?.applied !== undefined) holdSpeed();
       },
       { capture: true },
     );
@@ -251,15 +256,16 @@ export default defineContentScript({
       window,
       "keydown",
       (event) => {
-        if (!target || !controlling() || ownsKeyboard(event)) return;
+        const current = controlled();
+        if (!current || ownsKeyboard(event)) return;
         const direction = findDirection(settings.shortcuts, event);
         if (!direction) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         intercepted.add(event.code);
-        const before = currentSpeed(target, settings);
-        target = stepTarget(target, direction, settings);
-        apply(currentSpeed(target, settings) === before);
+        const before = currentSpeed(current.target, settings);
+        current.target = stepTarget(current.target, direction, settings);
+        apply(currentSpeed(current.target, settings) === before);
         publish();
       },
       { capture: true },

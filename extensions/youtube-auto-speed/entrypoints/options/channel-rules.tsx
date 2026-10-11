@@ -1,12 +1,18 @@
-import { useId, useRef, useState } from "react";
+import { useId } from "react";
 
-import { SpeedSelect } from "@/components/speed-select";
 import { newRuleId, normalizeHandle, sameHandle, type ChannelRule } from "@/utils/rules";
 import { channelName } from "@/utils/settings";
 
-import { AddButton, DeleteButton, ProblemText, RuleField, type Problem } from "./rule-parts";
-import { useConfirm } from "./use-confirm";
+import {
+  AddButton,
+  DeleteButton,
+  ProblemText,
+  RuleField,
+  SpeedSelect,
+  type Problem,
+} from "./rule-parts";
 import { useDraft } from "./use-draft";
+import { useRuleList, type RowProps } from "./use-rule-list";
 
 function problemOf(text: string, takenAbove: boolean): Problem | undefined {
   if (text.trim() === "") {
@@ -25,6 +31,10 @@ function problemOf(text: string, takenAbove: boolean): Problem | undefined {
   return undefined;
 }
 
+function blankRule(): ChannelRule {
+  return { handle: "", id: newRuleId(), speed: 1 };
+}
+
 export function ChannelRules({
   names,
   rules,
@@ -34,9 +44,7 @@ export function ChannelRules({
   rules: readonly ChannelRule[];
   onChange: (rules: ChannelRule[]) => void;
 }) {
-  const [armed, setArmed] = useConfirm();
-  const [added, setAdded] = useState<string>();
-  const addRef = useRef<HTMLButtonElement>(null);
+  const { add, addRef, row } = useRuleList(rules, onChange, blankRule);
 
   return (
     <>
@@ -50,31 +58,17 @@ export function ChannelRules({
           {rules.map((rule, index) => (
             <ChannelRuleRow
               key={rule.id}
-              armed={armed === rule.id}
-              autoFocus={added === rule.id}
+              {...row(rule, index)}
               names={names}
               rule={rule}
               takenAbove={rules
                 .slice(0, index)
                 .some((each) => sameHandle(each.handle, rule.handle))}
-              onArm={() => setArmed(rule.id)}
-              onChange={(next) => onChange(rules.with(index, next))}
-              onDelete={() => {
-                onChange(rules.toSpliced(index, 1));
-                addRef.current?.focus();
-              }}
             />
           ))}
         </ul>
       )}
-      <AddButton
-        ref={addRef}
-        onClick={() => {
-          const rule: ChannelRule = { handle: "", id: newRuleId(), speed: 1 };
-          onChange([...rules, rule]);
-          setAdded(rule.id);
-        }}
-      >
+      <AddButton ref={addRef} onClick={add}>
         Add channel rule
       </AddButton>
     </>
@@ -90,23 +84,18 @@ function ChannelRuleRow({
   onArm,
   onChange,
   onDelete,
-}: {
-  armed: boolean;
-  autoFocus: boolean;
+}: RowProps<ChannelRule> & {
   names: Record<string, string>;
   rule: ChannelRule;
   takenAbove: boolean;
-  onArm: () => void;
-  onChange: (rule: ChannelRule) => void;
-  onDelete: () => void;
 }) {
-  const { draft, inputProps } = useDraft(
+  const { text, inputProps } = useDraft(
     rule.handle,
     (handle) => onChange({ ...rule, handle }),
-    (text) => normalizeHandle(text) ?? text.trim(),
+    (typed) => normalizeHandle(typed) ?? typed.trim(),
   );
-  const handle = normalizeHandle(draft);
-  const problem = problemOf(draft, takenAbove);
+  const handle = normalizeHandle(text);
+  const problem = problemOf(text, takenAbove);
   const problemId = useId();
   const name = handle && channelName(names, handle);
   const label = handle ? `channel rule ${handle}` : "new channel rule";

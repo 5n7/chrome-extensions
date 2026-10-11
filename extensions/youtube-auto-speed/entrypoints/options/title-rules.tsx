@@ -1,12 +1,18 @@
 import { cn } from "@repo/ui/lib/utils";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { SpeedSelect } from "@/components/speed-select";
 import { compilePattern, newRuleId, type TitleRule } from "@/utils/rules";
 
-import { AddButton, DeleteButton, ProblemText, RuleField, type Problem } from "./rule-parts";
-import { useConfirm } from "./use-confirm";
+import {
+  AddButton,
+  DeleteButton,
+  ProblemText,
+  RuleField,
+  SpeedSelect,
+  type Problem,
+} from "./rule-parts";
 import { useDraft } from "./use-draft";
+import { useRuleList, type RowProps } from "./use-rule-list";
 
 /** A row's part in dragging rules into a new order. */
 interface Drag {
@@ -33,6 +39,10 @@ function problemOf(pattern: string): Problem | undefined {
   return undefined;
 }
 
+function blankRule(): TitleRule {
+  return { id: newRuleId(), pattern: "", speed: 1 };
+}
+
 export function TitleRules({
   rules,
   onChange,
@@ -40,14 +50,12 @@ export function TitleRules({
   rules: readonly TitleRule[];
   onChange: (rules: TitleRule[]) => void;
 }) {
-  const [armed, setArmed] = useConfirm();
-  const [added, setAdded] = useState<string>();
+  const { add, addRef, row } = useRuleList(rules, onChange, blankRule);
   const [dragging, setDragging] = useState<number>();
   const [over, setOver] = useState<number>();
   // The rule whose handle keeps focus after a keyboard move re-renders the list.
   const [movedByKeyboard, setMovedByKeyboard] = useState<string>();
   const [announcement, setAnnouncement] = useState("");
-  const addRef = useRef<HTMLButtonElement>(null);
 
   /** Moves the rule at `from` into the place of the rule at `to`, shifting the ones between. */
   function reorder(from: number, to: number, byKeyboard: boolean) {
@@ -86,8 +94,7 @@ export function TitleRules({
           {rules.map((rule, index) => (
             <TitleRuleRow
               key={rule.id}
-              armed={armed === rule.id}
-              autoFocus={added === rule.id}
+              {...row(rule, index)}
               drag={{
                 active: dragging !== undefined,
                 edge: dropEdge(index),
@@ -102,26 +109,13 @@ export function TitleRules({
               focusGrip={movedByKeyboard === rule.id}
               index={index}
               rule={rule}
-              onArm={() => setArmed(rule.id)}
-              onChange={(next) => onChange(rules.with(index, next))}
-              onDelete={() => {
-                onChange(rules.toSpliced(index, 1));
-                addRef.current?.focus();
-              }}
               onGripFocused={() => setMovedByKeyboard(undefined)}
               onMove={(offset) => reorder(index, index + offset, true)}
             />
           ))}
         </ul>
       )}
-      <AddButton
-        ref={addRef}
-        onClick={() => {
-          const rule: TitleRule = { id: newRuleId(), pattern: "", speed: 1 };
-          onChange([...rules, rule]);
-          setAdded(rule.id);
-        }}
-      >
+      <AddButton ref={addRef} onClick={add}>
         Add title rule
       </AddButton>
     </>
@@ -140,25 +134,20 @@ function TitleRuleRow({
   onDelete,
   onGripFocused,
   onMove,
-}: {
-  armed: boolean;
-  autoFocus: boolean;
+}: RowProps<TitleRule> & {
   drag: Drag;
   focusGrip: boolean;
   index: number;
   rule: TitleRule;
-  onArm: () => void;
-  onChange: (rule: TitleRule) => void;
-  onDelete: () => void;
   onGripFocused: () => void;
   onMove: (offset: -1 | 1) => void;
 }) {
-  const { draft, inputProps } = useDraft(rule.pattern, (pattern) => onChange({ ...rule, pattern }));
-  const problem = problemOf(draft);
+  const { text, inputProps } = useDraft(rule.pattern, (pattern) => onChange({ ...rule, pattern }));
+  const problem = problemOf(text);
   const problemId = useId();
   const rowRef = useRef<HTMLLIElement>(null);
   const gripRef = useRef<HTMLButtonElement>(null);
-  const label = draft ? `title rule ${draft}` : `title rule ${index + 1}`;
+  const label = text ? `title rule ${text}` : `title rule ${index + 1}`;
 
   useEffect(() => {
     if (!focusGrip) return;
