@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import { recencyOrders } from "./recency";
-import { createSwitcher, SETTLE_MS } from "./switcher";
+import { createSwitcher, SETTLE_MS, type Tabs } from "./switcher";
 
 const WINDOW = 1;
 const OTHER_WINDOW = 2;
@@ -12,7 +12,11 @@ const OTHER_WINDOW = 2;
  * does, but each test delivers the activation event itself, in the order Chrome would. Tabs start
  * last accessed in the order listed.
  */
-function setup(windows: Record<number, number[]>, active: Record<number, number>) {
+function setup(
+  windows: Record<number, number[]>,
+  active: Record<number, number>,
+  overrides: Partial<Tabs> = {},
+) {
   const activated: number[] = [];
   const lastAccessed = new Map<number, number>();
   let clock = 0;
@@ -31,6 +35,7 @@ function setup(windows: Record<number, number[]>, active: Record<number, number>
         lastAccessed: lastAccessed.get(id) ?? -index,
       })),
     lastFocusedWindow: async () => WINDOW,
+    ...overrides,
   });
 
   /** Presses Ctrl+Tab (or Ctrl+Shift+Tab), then delivers the activation it caused, if any. */
@@ -63,7 +68,10 @@ describe("createSwitcher", () => {
     fakeBrowser.reset();
     vi.useFakeTimers();
   });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
 
   it("switches to the previously used tab and makes it the most recent", async () => {
     await recencyOrders.setValue({ [WINDOW]: [1, 2, 3] });
@@ -148,6 +156,49 @@ describe("createSwitcher", () => {
     expect(await order()).toEqual([2, 1, 4]);
   });
 
+  it("skips a tab that closes during the Walk", async () => {
+    await recencyOrders.setValue({ [WINDOW]: [1, 2, 3, 4] });
+    const windows = { [WINDOW]: [1, 2, 3, 4] };
+    const { activated, press, switcher } = setup(windows, { [WINDOW]: 1 });
+    await press();
+    windows[WINDOW] = [1, 2, 4];
+    await switcher.removed(3, WINDOW, false);
+    await press();
+    expect(activated).toEqual([2, 4]);
+  });
+
+  it("treats a click on a tab it failed to show as an ordinary switch", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await recencyOrders.setValue({ [WINDOW]: [1, 2, 3] });
+    const { click, switcher } = setup(
+      { [WINDOW]: [1, 2, 3] },
+      { [WINDOW]: 1 },
+      { activate: () => Promise.reject(new Error("No tab with id: 2.")) },
+    );
+    await switcher.press("older", WINDOW);
+    await click(2);
+    expect(await order()).toEqual([2, 1, 3]);
+  });
+
+  it("keeps the Walk going when a press is still queued as the settle timer fires", async () => {
+    await recencyOrders.setValue({ [WINDOW]: [1, 2, 3] });
+    let focus = (_windowId: number) => {};
+    const { press, switcher } = setup(
+      { [WINDOW]: [1, 2, 3] },
+      { [WINDOW]: 1 },
+      { lastFocusedWindow: () => new Promise((resolve) => (focus = resolve)) },
+    );
+    await press();
+    const late = switcher.press("older");
+    await settle();
+    focus(WINDOW);
+    await late;
+    await switcher.activated(3, WINDOW);
+    expect(await order()).toEqual([1, 2, 3]);
+    await settle();
+    expect(await order()).toEqual([3, 1, 2]);
+  });
+
   it("settles a Walk in one window when another window's Walk begins", async () => {
     await recencyOrders.setValue({ [OTHER_WINDOW]: [5, 6], [WINDOW]: [1, 2] });
     const { press } = setup({ [OTHER_WINDOW]: [5, 6], [WINDOW]: [1, 2] }, { 1: 1, 2: 5 });
@@ -191,11 +242,44 @@ describe("createSwitcher", () => {
     expect(await order()).toEqual([2, 1, 3]);
   });
 
+  it("settles on the shown tab under the id Chrome replaced it with", async () => {
+    await recencyOrders.setValue({ [WINDOW]: [1, 2, 3] });
+    const windows = { [WINDOW]: [1, 2, 3] };
+    const { press, switcher } = setup(windows, { [WINDOW]: 1 });
+    await press();
+    windows[WINDOW] = [1, 7, 3];
+    await switcher.replaced(7, 2);
+    await settle();
+    expect(await order()).toEqual([7, 1, 3]);
+  });
+
+  it("keeps walking across a tab Chrome replaces before its activation arrives", async () => {
+    await recencyOrders.setValue({ [WINDOW]: [1, 2, 3] });
+    const windows = { [WINDOW]: [1, 2, 3] };
+    const { activated, press, switcher } = setup(windows, { [WINDOW]: 1 });
+    await switcher.press("older", WINDOW);
+    windows[WINDOW] = [1, 7, 3];
+    await switcher.replaced(7, 2);
+    await switcher.activated(7, WINDOW);
+    await press();
+    await press("newer");
+    expect(activated).toEqual([2, 3, 7]);
+  });
+
   it("walks the last focused window when Chrome names none", async () => {
     await recencyOrders.setValue({ [WINDOW]: [1, 2] });
     const { activated, switcher } = setup({ [WINDOW]: [1, 2] }, { [WINDOW]: 1 });
     await switcher.press("older");
     expect(activated).toEqual([2]);
+  });
+
+  it("drops a Walk whose window closes, leaving no order behind", async () => {
+    await recencyOrders.setValue({ [WINDOW]: [1, 2] });
+    const { press, switcher } = setup({ [WINDOW]: [1, 2] }, { [WINDOW]: 1 });
+    await press();
+    await switcher.windowRemoved(WINDOW);
+    await settle();
+    expect(await order()).toBeUndefined();
   });
 
   it("forgets a closed window's order", async () => {

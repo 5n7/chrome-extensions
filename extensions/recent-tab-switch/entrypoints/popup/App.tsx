@@ -41,7 +41,6 @@ interface Command {
 
 export function App() {
   const [commands, setCommands] = useState<Command[]>();
-  const [error, setError] = useState<string>();
   // Set once the clipboard refuses the code, so the next press only opens the page.
   const [copyByHand, setCopyByHand] = useState(false);
   const code = setupCode(browser.runtime.id);
@@ -68,7 +67,6 @@ export function App() {
         await navigator.clipboard.writeText(code);
       } catch {
         setCopyByHand(true);
-        setError("Couldn't copy. Copy the code below yourself, then open the page.");
         return;
       }
     }
@@ -89,7 +87,7 @@ export function App() {
         {commands.map(({ description, name, shortcut }) => (
           <li className="flex items-center justify-between gap-3" key={name}>
             <span className="text-[15px] leading-tight">{description}</span>
-            <Shortcut keys={shortcut ? keysOf(shortcut) : undefined} />
+            <Shortcut shortcut={shortcut} />
           </li>
         ))}
       </ul>
@@ -103,16 +101,18 @@ export function App() {
         open={!bound}
         onCopyAndOpen={() => void copyAndOpen()}
       />
-      {error && <ErrorNote>{error}</ErrorNote>}
+      {copyByHand && (
+        <ErrorNote>Couldn't copy. Copy the code below yourself, then open the page.</ErrorNote>
+      )}
     </main>
   );
 }
 
-function Shortcut({ keys }: { keys: string[] | undefined }) {
-  if (!keys) return <span className="text-ink/60 shrink-0 text-sm">Not set</span>;
+function Shortcut({ shortcut }: { shortcut: string }) {
+  if (!shortcut) return <span className="text-ink/60 shrink-0 text-sm">Not set</span>;
   return (
     <span className="flex shrink-0 gap-1">
-      {keys.map((key, index) => (
+      {keysOf(shortcut).map((key, index) => (
         <kbd
           className="wobbly min-w-7 px-1.5 pt-0.5 text-center text-sm leading-6 font-bold [--fill:var(--color-peach)] [--r:7px]"
           key={`${index}-${key}`}

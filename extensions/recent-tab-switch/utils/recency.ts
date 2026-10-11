@@ -1,4 +1,4 @@
-import { storage } from "#imports";
+import { storage, type Browser } from "#imports";
 
 /** A window's Recency Order: its tab ids, from the most recently used to the least. */
 export type RecencyOrder = number[];
@@ -28,10 +28,7 @@ export function replace(order: RecencyOrder, removedId: number, addedId: number)
   return order.map((id) => (id === removedId ? addedId : id));
 }
 
-export interface OpenTab {
-  id?: number;
-  lastAccessed?: number;
-}
+export type OpenTab = Pick<Browser.tabs.Tab, "id" | "lastAccessed">;
 
 /**
  * Matches an order to the window's open tabs: closed tabs drop out, and tabs it has not seen, such
@@ -44,7 +41,7 @@ export function reconcile(order: RecencyOrder, tabs: OpenTab[]): RecencyOrder {
     .filter(
       (tab): tab is OpenTab & { id: number } => tab.id !== undefined && !known.includes(tab.id),
     )
-    .toSorted((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0))
+    .toSorted((a, b) => b.lastAccessed - a.lastAccessed)
     .map((tab) => tab.id);
   return [...known, ...unseen];
 }

@@ -37,17 +37,21 @@ describe("replace", () => {
 
 describe("reconcile", () => {
   it("drops tabs that are no longer open", () => {
-    expect(reconcile([1, 2, 3], [{ id: 3 }, { id: 1 }])).toEqual([1, 3]);
+    const tabs = [
+      { id: 3, lastAccessed: 0 },
+      { id: 1, lastAccessed: 0 },
+    ];
+    expect(reconcile([1, 2, 3], tabs)).toEqual([1, 3]);
   });
 
   it("ranks unseen tabs behind known ones by last access", () => {
     const tabs = [
       { id: 1, lastAccessed: 10 },
-      { id: 2, lastAccessed: 30 },
-      { id: 3, lastAccessed: 20 },
-      { id: 4 },
+      { id: 2, lastAccessed: 20 },
+      { id: 3, lastAccessed: 30 },
+      { id: 4, lastAccessed: 0 },
     ];
-    expect(reconcile([1], tabs)).toEqual([1, 2, 3, 4]);
+    expect(reconcile([1], tabs)).toEqual([1, 3, 2, 4]);
   });
 });
 

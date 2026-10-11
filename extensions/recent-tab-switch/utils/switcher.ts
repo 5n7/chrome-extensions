@@ -1,3 +1,5 @@
+import type { Browser } from "#imports";
+
 import {
   append,
   markUsed,
@@ -5,7 +7,6 @@ import {
   reconcile,
   remove,
   replace,
-  type OpenTab,
   type RecencyOrder,
 } from "./recency";
 import { current, step, without, type Direction, type Walk } from "./walk";
@@ -15,9 +16,16 @@ export const SETTLE_MS = 1000;
 
 /** The part of the tabs and windows APIs the switcher drives, so tests can stand in for Chrome. */
 export interface Tabs {
-  inWindow(windowId: number): Promise<(OpenTab & { active: boolean })[]>;
+  inWindow(windowId: number): Promise<Pick<Browser.tabs.Tab, "active" | "id" | "lastAccessed">[]>;
   activate(tabId: number): Promise<unknown>;
   lastFocusedWindow(): Promise<number | undefined>;
+}
+
+interface OngoingWalk {
+  walk: Walk;
+  shown?: number;
+  awaitedActivations: Map<number, number>;
+  settleTimer?: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -27,13 +35,7 @@ export interface Tabs {
 export function createSwitcher(tabs: Tabs) {
   // The Walk lives only in memory: the service worker outlives a one-second pause, and a lost Walk
   // just leaves the Recency Order as it was.
-  let walk: Walk | undefined;
-  // The tab the Walk last showed, which becomes the most recently used when it settles.
-  let shown: number | undefined;
-  // How many times the Walk asked Chrome to show each tab without its activation arriving yet; any
-  // other activation settles the Walk.
-  const pending = new Map<number, number>();
-  let settleTimer: ReturnType<typeof setTimeout> | undefined;
+  let ongoing: OngoingWalk | undefined;
 
   let queue = Promise.resolve();
   function enqueue(task: () => Promise<void>): Promise<void> {
@@ -60,45 +62,41 @@ export function createSwitcher(tabs: Tabs) {
   }
 
   /** Counts off one awaited activation of the tab, telling whether there was one. */
-  function arrive(tabId: number): boolean {
-    const count = pending.get(tabId);
+  function arrive(walking: OngoingWalk, tabId: number): boolean {
+    const count = walking.awaitedActivations.get(tabId);
     if (count === undefined) return false;
-    if (count > 1) pending.set(tabId, count - 1);
-    else pending.delete(tabId);
+    if (count > 1) walking.awaitedActivations.set(tabId, count - 1);
+    else walking.awaitedActivations.delete(tabId);
     return true;
   }
 
   function end() {
-    walk = undefined;
-    shown = undefined;
-    pending.clear();
-    clearTimeout(settleTimer);
-    settleTimer = undefined;
+    clearTimeout(ongoing?.settleTimer);
+    ongoing = undefined;
   }
 
   async function settle() {
-    if (!walk) return;
-    const { windowId } = walk;
-    const settled = shown;
+    if (!ongoing) return;
+    const { shown, walk } = ongoing;
     end();
-    if (settled !== undefined) await update(windowId, (order) => markUsed(order, settled));
+    if (shown !== undefined) await update(walk.windowId, (order) => markUsed(order, shown));
   }
 
-  function scheduleSettle() {
-    clearTimeout(settleTimer);
+  function scheduleSettle(walking: OngoingWalk) {
+    clearTimeout(walking.settleTimer);
     const timer = setTimeout(
       // A press queued just as the timer fired has started a new countdown, so this one stands down.
-      () => void enqueue(async () => (settleTimer === timer ? settle() : undefined)),
+      () => void enqueue(async () => (ongoing?.settleTimer === timer ? settle() : undefined)),
       SETTLE_MS,
     );
-    settleTimer = timer;
+    walking.settleTimer = timer;
   }
 
   async function press(direction: Direction, pressedIn: number | undefined) {
     const windowId = pressedIn ?? (await tabs.lastFocusedWindow());
     if (windowId === undefined) return;
-    if (walk && walk.windowId !== windowId) await settle();
-    if (!walk) {
+    if (ongoing && ongoing.walk.windowId !== windowId) await settle();
+    if (!ongoing) {
       // Ctrl+Shift+Tab has nothing to step back to outside a Walk.
       if (direction === "newer") return;
       const open = await tabs.inWindow(windowId);
@@ -110,21 +108,23 @@ export function createSwitcher(tabs: Tabs) {
       // settles.
       orders[windowId] = order;
       await recencyOrders.setValue(orders);
-      walk = { position: 0, tabs: order, windowId };
+      ongoing = { awaitedActivations: new Map(), walk: { position: 0, tabs: order, windowId } };
     }
-    const next = step(walk, direction);
-    const moved = next.position !== walk.position;
-    walk = next;
-    scheduleSettle();
+    const walking = ongoing;
+    const next = step(walking.walk, direction);
+    const moved = next.position !== walking.walk.position;
+    walking.walk = next;
+    scheduleSettle(walking);
     const target = current(next);
     // At either end there is nothing new to show.
     if (!moved || target === undefined) return;
-    pending.set(target, (pending.get(target) ?? 0) + 1);
+    const { awaitedActivations } = walking;
+    awaitedActivations.set(target, (awaitedActivations.get(target) ?? 0) + 1);
     try {
       await tabs.activate(target);
-      shown = target;
+      walking.shown = target;
     } catch (error) {
-      arrive(target);
+      arrive(walking, target);
       throw error;
     }
   }
@@ -135,9 +135,28 @@ export function createSwitcher(tabs: Tabs) {
   }
 
   function forget(tabId: number) {
-    if (walk) walk = without(walk, tabId);
-    if (shown === tabId) shown = undefined;
-    pending.delete(tabId);
+    if (!ongoing) return;
+    ongoing.walk = without(ongoing.walk, tabId);
+    if (ongoing.shown === tabId) ongoing.shown = undefined;
+    ongoing.awaitedActivations.delete(tabId);
+  }
+
+  function release(tabId: number, windowId: number) {
+    return enqueue(async () => {
+      forget(tabId);
+      await update(windowId, (order) => remove(order, tabId));
+    });
+  }
+
+  function rename(removedId: number, addedId: number) {
+    if (!ongoing) return;
+    ongoing.walk = { ...ongoing.walk, tabs: replace(ongoing.walk.tabs, removedId, addedId) };
+    if (ongoing.shown === removedId) ongoing.shown = addedId;
+    const count = ongoing.awaitedActivations.get(removedId);
+    if (count !== undefined) {
+      ongoing.awaitedActivations.delete(removedId);
+      ongoing.awaitedActivations.set(addedId, count);
+    }
   }
 
   return {
@@ -149,7 +168,7 @@ export function createSwitcher(tabs: Tabs) {
 
     activated: (tabId: number, windowId: number) =>
       enqueue(async () => {
-        if (walk?.windowId === windowId && arrive(tabId)) return;
+        if (ongoing?.walk.windowId === windowId && arrive(ongoing, tabId)) return;
         // Any other switch, such as a click on a tab, settles the Walk at once.
         await settle();
         await update(windowId, (order) => markUsed(order, tabId));
@@ -157,30 +176,17 @@ export function createSwitcher(tabs: Tabs) {
 
     created: admit,
 
+    // A closing window's whole order goes with it in `windowRemoved`.
     removed: (tabId: number, windowId: number, isWindowClosing: boolean) =>
-      enqueue(async () => {
-        forget(tabId);
-        // The window's whole order goes with it in `windowRemoved`.
-        if (!isWindowClosing) await update(windowId, (order) => remove(order, tabId));
-      }),
+      isWindowClosing ? enqueue(async () => forget(tabId)) : release(tabId, windowId),
 
-    detached: (tabId: number, windowId: number) =>
-      enqueue(async () => {
-        forget(tabId);
-        await update(windowId, (order) => remove(order, tabId));
-      }),
+    detached: release,
 
     attached: admit,
 
     replaced: (addedId: number, removedId: number) =>
       enqueue(async () => {
-        if (walk) walk = { ...walk, tabs: replace(walk.tabs, removedId, addedId) };
-        if (shown === removedId) shown = addedId;
-        const count = pending.get(removedId);
-        if (count !== undefined) {
-          pending.delete(removedId);
-          pending.set(addedId, count);
-        }
+        rename(removedId, addedId);
         const orders = await recencyOrders.getValue();
         for (const [windowId, order] of Object.entries(orders)) {
           orders[windowId] = replace(order, removedId, addedId);
@@ -190,7 +196,7 @@ export function createSwitcher(tabs: Tabs) {
 
     windowRemoved: (windowId: number) =>
       enqueue(async () => {
-        if (walk?.windowId === windowId) end();
+        if (ongoing?.walk.windowId === windowId) end();
         const orders = await recencyOrders.getValue();
         delete orders[windowId];
         await recencyOrders.setValue(orders);
