@@ -22,6 +22,7 @@ export function Preview({ config, on }: { config: StageConfig; on: boolean }) {
     };
   }, []);
 
+  // Runs before the refill below, so a relayout's clear never wipes the fresh Comments.
   useEffect(() => stage.current?.configure(config));
 
   useEffect(() => {

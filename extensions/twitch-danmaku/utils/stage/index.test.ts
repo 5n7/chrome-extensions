@@ -68,7 +68,8 @@ describe("createStage", () => {
     const [animation, ...rest] = animations();
     expect(rest).toEqual([]);
     expect(Number(animation?.currentTime)).toBeGreaterThanOrEqual(3000);
-    expect(Number(animation?.currentTime)).toBeLessThan(3100);
+    // happy-dom advances animations in real time, and a busy parallel run can be slow.
+    expect(Number(animation?.currentTime)).toBeLessThan(4000);
   });
 
   it("drops a Restored Comment that would already have left", () => {

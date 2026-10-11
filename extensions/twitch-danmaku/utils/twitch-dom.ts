@@ -45,14 +45,13 @@ export function findChatList(doc: Document, kind: WatchPage["kind"]): Element | 
   return doc.querySelector(kind === "live" ? LIVE_CHAT_LIST : VOD_CHAT_LIST) ?? undefined;
 }
 
-export function listLines(list: Element): Element[] {
-  return [...list.children];
+export interface ChatLine {
+  readBody(): Part[] | undefined;
 }
 
-export interface ChatLine {
+export interface ReplayLine extends ChatLine {
   readonly login: string;
-  readonly replayTime: number | undefined;
-  readBody(): Part[] | undefined;
+  readonly replayTime: number;
 }
 
 export function parseReplayTime(text: string): number | undefined {
@@ -62,18 +61,15 @@ export function parseReplayTime(text: string): number | undefined {
   return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
 }
 
-export function readLine(node: Node, kind: WatchPage["kind"]): ChatLine | undefined {
+export function readLiveLine(node: Node): ChatLine | undefined {
   if (!(node instanceof Element)) return undefined;
-  if (kind === "live") {
-    const line = node.matches(LIVE_LINE) ? node : node.querySelector(LIVE_LINE);
-    const login = line?.getAttribute("data-a-user");
-    if (!line || !login) return undefined;
-    return {
-      login: login.toLowerCase(),
-      replayTime: undefined,
-      readBody: () => readFragments(line.querySelector(LIVE_BODY)),
-    };
-  }
+  const line = node.matches(LIVE_LINE) ? node : node.querySelector(LIVE_LINE);
+  if (!line?.getAttribute("data-a-user")) return undefined;
+  return { readBody: () => readFragments(line.querySelector(LIVE_BODY)) };
+}
+
+export function readReplayLine(node: Node): ReplayLine | undefined {
+  if (!(node instanceof Element)) return undefined;
   const line = node.querySelector(VOD_LINE);
   const login = line?.querySelector(VOD_AUTHOR)?.getAttribute("data-a-user");
   const replayTime = parseReplayTime(line?.querySelector(VOD_TIME)?.textContent ?? "");

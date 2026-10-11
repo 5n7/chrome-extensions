@@ -6,22 +6,6 @@ export type Verdict =
   | { readonly kind: "drop"; readonly reason: "ahead" | "stale" }
   | { readonly kind: "show"; readonly age: number };
 
-export interface Playback {
-  readonly position: number;
-  readonly rate: number;
-}
-
-export interface JudgeContext {
-  readonly crossingTime: number;
-  readonly playback: Playback | undefined;
-}
-
-export function judge(replayTime: number | undefined, context: JudgeContext): Verdict {
-  const { playback } = context;
-  if (!playback || replayTime === undefined) return { kind: "show", age: 0 };
-  return judgeLag(playback.position - replayTime, playback.rate, context.crossingTime);
-}
-
 export function judgeLag(lag: number, rate: number, crossingTime: number): Verdict {
   if (lag < AHEAD_LAG) return { kind: "drop", reason: "ahead" };
   if (lag <= ON_TIME_LAG) return { kind: "show", age: 0 };
@@ -37,16 +21,11 @@ export function judgeLag(lag: number, rate: number, crossingTime: number): Verdi
 export class Seen {
   readonly #replayTimes = new Map<string, number>();
 
-  static key(replayTime: number, login: string, text: string): string {
-    return `${replayTime}|${login}|${text}`;
-  }
-
-  has(key: string): boolean {
-    return this.#replayTimes.has(key);
-  }
-
-  add(key: string, replayTime: number): void {
+  firstSight(replayTime: number, login: string, text: string): boolean {
+    const key = `${replayTime}|${login}|${text}`;
+    if (this.#replayTimes.has(key)) return false;
     this.#replayTimes.set(key, replayTime);
+    return true;
   }
 
   prune(replayTime: number): void {

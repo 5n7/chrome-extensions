@@ -5,10 +5,7 @@ export function createLanes(count: number): Lanes {
 }
 
 export function firstFreeLane(lanes: Lanes, at: number): number {
-  for (let lane = 0; lane < lanes.length; lane++) {
-    if (lanes[lane]! <= at) return lane;
-  }
-  return -1;
+  return lanes.findIndex((busyUntil) => busyUntil <= at);
 }
 
 export function occupyLane(

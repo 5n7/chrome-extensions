@@ -21,7 +21,7 @@ function emote(code: unknown, src: string, width?: unknown, height?: unknown): E
   return [{ kind: "emote", code, src, aspect: w && h ? w / h : 1 }];
 }
 
-export function parse7tvSet(json: unknown): Emote[] {
+function parse7tvSet(json: unknown): Emote[] {
   if (!isRecord(json)) return [];
   return list(json.emotes).flatMap((entry) => {
     if (!isRecord(entry) || !isRecord(entry.data) || !isRecord(entry.data.host)) return [];
@@ -37,7 +37,7 @@ export function parse7tvUser(json: unknown): Emote[] {
   return isRecord(json) ? parse7tvSet(json.emote_set) : [];
 }
 
-export function parseBttvEmotes(json: unknown): Emote[] {
+function parseBttvEmotes(json: unknown): Emote[] {
   return list(json).flatMap((entry) => {
     if (!isRecord(entry) || typeof entry.id !== "string") return [];
     return emote(
@@ -86,33 +86,13 @@ export function buildIndex(...lists: readonly (readonly Emote[])[]): EmoteIndex 
   return index;
 }
 
-async function fetchJson(url: string): Promise<unknown> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`${url} answered ${response.status}`);
-  return response.json();
-}
-
-async function settled<T>(promise: Promise<T>, fallback: T): Promise<T> {
+async function fetchProvider<T>(url: string, parse: (json: unknown) => T, fallback: T): Promise<T> {
   try {
-    return await promise;
+    const response = await fetch(url);
+    return response.ok ? parse(await response.json()) : fallback;
   } catch {
     return fallback;
   }
-}
-
-interface Channel {
-  readonly twitchId: string | undefined;
-  readonly ffzEmotes: readonly Emote[];
-}
-
-async function resolveChannel(login: string): Promise<Channel> {
-  const room = parseFfzRoom(
-    await settled(
-      fetchJson(`https://api.frankerfacez.com/v1/room/${encodeURIComponent(login)}`),
-      null,
-    ),
-  );
-  return { twitchId: room.twitchId, ffzEmotes: room.emotes };
 }
 
 let globals: Promise<Emote[]> | undefined;
@@ -120,12 +100,9 @@ const channels = new Map<string, Promise<EmoteIndex>>();
 
 function loadGlobals(): Promise<Emote[]> {
   globals ??= Promise.all([
-    settled(fetchJson("https://api.frankerfacez.com/v1/set/global").then(parseFfzGlobal), []),
-    settled(
-      fetchJson("https://api.betterttv.net/3/cached/emotes/global").then(parseBttvEmotes),
-      [],
-    ),
-    settled(fetchJson("https://7tv.io/v3/emote-sets/global").then(parse7tvSet), []),
+    fetchProvider("https://api.frankerfacez.com/v1/set/global", parseFfzGlobal, []),
+    fetchProvider("https://api.betterttv.net/3/cached/emotes/global", parseBttvEmotes, []),
+    fetchProvider("https://7tv.io/v3/emote-sets/global", parse7tvSet, []),
   ]).then((sets) => sets.flat());
   return globals;
 }
@@ -134,20 +111,29 @@ export function loadEmotes(login: string): Promise<EmoteIndex> {
   const cached = channels.get(login);
   if (cached) return cached;
   const loaded = (async () => {
-    const [global, channel] = await Promise.all([loadGlobals(), resolveChannel(login)]);
-    const { twitchId } = channel;
-    const [bttv, sevenTv] = twitchId
-      ? await Promise.all([
-          settled(
-            fetchJson(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`).then(
-              parseBttvUser,
-            ),
-            [],
-          ),
-          settled(fetchJson(`https://7tv.io/v3/users/twitch/${twitchId}`).then(parse7tvUser), []),
-        ])
-      : [[], []];
-    return buildIndex(global, channel.ffzEmotes, bttv, sevenTv);
+    const [global, room] = await Promise.all([
+      loadGlobals(),
+      fetchProvider(
+        `https://api.frankerfacez.com/v1/room/${encodeURIComponent(login)}`,
+        parseFfzRoom,
+        { twitchId: undefined, emotes: [] },
+      ),
+    ]);
+    const { emotes, twitchId } = room;
+    if (!twitchId) {
+      // BetterTTV and 7TV know a channel only by its Twitch id, so a later session asks FFZ again.
+      channels.delete(login);
+      return buildIndex(global, emotes);
+    }
+    const [bttv, sevenTv] = await Promise.all([
+      fetchProvider(
+        `https://api.betterttv.net/3/cached/users/twitch/${twitchId}`,
+        parseBttvUser,
+        [],
+      ),
+      fetchProvider(`https://7tv.io/v3/users/twitch/${twitchId}`, parse7tvUser, []),
+    ]);
+    return buildIndex(global, emotes, bttv, sevenTv);
   })();
   channels.set(login, loaded);
   return loaded;

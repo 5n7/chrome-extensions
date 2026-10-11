@@ -1,13 +1,9 @@
 import type { Part } from "../body";
+import type { Settings, SliderKey } from "../settings";
 import { createPlayClock } from "./clock";
 import { createLanes, firstFreeLane, occupyLane, travelTime, type Lanes } from "./lanes";
 
-export interface StageConfig {
-  readonly area: number;
-  readonly laneCount: number;
-  readonly opacity: number;
-  readonly crossingTime: number;
-}
+export type StageConfig = Pick<Settings, SliderKey>;
 
 export type OfferResult = "expired" | "hidden" | "no-lane" | "shown" | "skipped";
 
@@ -102,10 +98,14 @@ export function createStage(
     return comment;
   }
 
+  function recycle(comment: HTMLElement) {
+    comment.remove();
+    if (pool.length < POOL_LIMIT) pool.push(comment);
+  }
+
   function release(flight: Flight) {
     flights.delete(flight);
-    flight.element.remove();
-    if (pool.length < POOL_LIMIT) pool.push(flight.element);
+    recycle(flight.element);
   }
 
   function render(comment: HTMLElement, parts: readonly Part[]) {
@@ -142,6 +142,7 @@ export function createStage(
       const spawn = clock.now() - age;
       const lane = firstFreeLane(lanes, spawn);
       if (lane < 0) return "no-lane";
+      // The ResizeObserver reports after layout; the first offers come before it.
       areaWidth ||= element.clientWidth;
       if (areaWidth === 0) return "hidden";
       const parts = produce();
@@ -154,8 +155,7 @@ export function createStage(
       const length = comment.offsetWidth / areaWidth;
       const duration = travelTime(length, config.crossingTime);
       if (age >= duration) {
-        comment.remove();
-        if (pool.length < POOL_LIMIT) pool.push(comment);
+        recycle(comment);
         return "expired";
       }
       occupyLane(lanes, lane, spawn, length, config.crossingTime);

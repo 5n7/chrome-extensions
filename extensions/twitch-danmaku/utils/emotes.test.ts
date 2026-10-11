@@ -120,10 +120,35 @@ describe("loadEmotes", () => {
     expect(fetched.length).toBe(count);
   });
 
+  it("counts a provider that cannot be reached or answers garbage as empty", async () => {
+    const answer = globalThis.fetch;
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (url.includes("frankerfacez.com/v1/set/global")) throw new TypeError("offline");
+      if (url.includes("7tv.io/v3/users/")) return new Response("<html>");
+      return answer(url);
+    });
+    const { loadEmotes } = await import("./emotes");
+    expect([...(await loadEmotes("xqc")).keys()]).toEqual(["reckH"]);
+  });
+
   it("falls back to global Emotes when FFZ does not know the channel", async () => {
     const { loadEmotes } = await import("./emotes");
     const index = await loadEmotes("nobody");
     expect([...index.keys()]).toEqual(["reckH"]);
     expect(fetched.some((url) => url.includes("/users/twitch/"))).toBe(false);
+  });
+
+  it("looks the channel up again after FFZ failed to name it, keeping the globals", async () => {
+    const answer = globalThis.fetch;
+    let ffzDown = true;
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (ffzDown && url.includes("/v1/room/")) throw new TypeError("offline");
+      return answer(url);
+    });
+    const { loadEmotes } = await import("./emotes");
+    expect([...(await loadEmotes("xqc")).keys()]).toEqual(["reckH"]);
+    ffzDown = false;
+    expect([...(await loadEmotes("xqc")).keys()].sort()).toEqual(["GAMBA", "reckH"]);
+    expect(fetched.filter((url) => url.includes("/emote-sets/global"))).toHaveLength(1);
   });
 });

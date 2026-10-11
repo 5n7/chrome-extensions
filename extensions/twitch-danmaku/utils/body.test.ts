@@ -40,6 +40,15 @@ describe("applyEmotes", () => {
   it("matches case-sensitively, as the providers do", () => {
     expect(applyEmotes([text("kekw")], index)).toEqual([text("kekw")]);
   });
+
+  it("joins neighbouring text into one part around the Emotes", () => {
+    expect(applyEmotes([text("a "), text("b KEKW"), emote("E"), text(" c")], index)).toEqual([
+      text("a b "),
+      emote("KEKW"),
+      emote("E"),
+      text(" c"),
+    ]);
+  });
 });
 
 describe("truncate", () => {
@@ -73,6 +82,14 @@ describe("toComment", () => {
       text("hi there "),
       emote("E"),
     ]);
+  });
+
+  it("joins neighbouring text into one part", () => {
+    expect(toComment([text("a "), text("b")], new Map())).toEqual([text("a b")]);
+  });
+
+  it("collapses whitespace that spans two text fragments into one space", () => {
+    expect(toComment([text("a  "), text("  b")], new Map())).toEqual([text("a b")]);
   });
 
   it("has nothing to show for a blank body", () => {

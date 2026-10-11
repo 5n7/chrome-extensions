@@ -6,7 +6,8 @@ import {
   findPlayer,
   findVodOwnerLogin,
   parseReplayTime,
-  readLine,
+  readLiveLine,
+  readReplayLine,
 } from "./twitch-dom";
 
 const LIVE_LINE = `
@@ -39,12 +40,9 @@ function node(html: string): Element {
   return template.content.firstElementChild!;
 }
 
-describe("readLine", () => {
-  it("reads a live message: login, then its mentions, text, and Emotes in order", () => {
-    const line = readLine(node(LIVE_LINE), "live");
-    expect(line?.login).toBe("someviewer");
-    expect(line?.replayTime).toBeUndefined();
-    expect(line?.readBody()).toEqual([
+describe("readLiveLine", () => {
+  it("reads a live message's mentions, text, and Emotes in order", () => {
+    expect(readLiveLine(node(LIVE_LINE))?.readBody()).toEqual([
       { kind: "text", text: "@xQc" },
       { kind: "text", text: " nice " },
       {
@@ -56,14 +54,19 @@ describe("readLine", () => {
     ]);
   });
 
-  it("skips a live sub notice and Twitch's empty placeholders", () => {
+  it("skips a live sub notice, a line with no author, and Twitch's empty placeholders", () => {
     const notice = `<div><div data-test-selector="user-notice-line"><p><span class="chatter-name">a</span> Subscribed with Prime.</p></div></div>`;
-    expect(readLine(node(notice), "live")).toBeUndefined();
-    expect(readLine(node("<div><div></div></div>"), "live")).toBeUndefined();
+    expect(readLiveLine(node(notice))).toBeUndefined();
+    expect(
+      readLiveLine(node(`<div class="chat-line__message" data-a-user=""></div>`)),
+    ).toBeUndefined();
+    expect(readLiveLine(node("<div><div></div></div>"))).toBeUndefined();
   });
+});
 
+describe("readReplayLine", () => {
   it("reads a Chat Replay message without the separator before its body", () => {
-    const line = readLine(node(vodLine("1:00:20", "Viewer_1", "gg")), "vod");
+    const line = readReplayLine(node(vodLine("1:00:20", "Viewer_1", "gg")));
     expect(line?.login).toBe("viewer_1");
     expect(line?.replayTime).toBe(3620);
     expect(line?.readBody()).toEqual([{ kind: "text", text: "gg" }]);
@@ -75,7 +78,7 @@ describe("readLine", () => {
       "trippie_tim",
       "trippie_tim subscribed at Tier 1. They've subscribed for 37 months!",
     );
-    expect(readLine(node(notice), "vod")?.readBody()).toBeUndefined();
+    expect(readReplayLine(node(notice))?.readBody()).toBeUndefined();
   });
 });
 

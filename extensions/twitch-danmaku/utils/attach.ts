@@ -5,20 +5,12 @@ export interface Binding {
   readonly chatList: object;
 }
 
-export type AttachPlan = "attach" | "detach" | "keep" | "replace";
-
-export function planAttach(
-  attached: Binding | undefined,
-  connected: boolean,
-  wanted: Binding | undefined,
-): AttachPlan {
-  if (!wanted) return attached ? "detach" : "keep";
-  if (!attached) return "attach";
-  const same =
+export function canKeep(attached: Binding, connected: boolean, wanted: Binding): boolean {
+  return (
     connected &&
     attached.key === wanted.key &&
     attached.player === wanted.player &&
     attached.video === wanted.video &&
-    attached.chatList === wanted.chatList;
-  return same ? "keep" : "replace";
+    attached.chatList === wanted.chatList
+  );
 }

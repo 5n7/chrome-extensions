@@ -1,16 +1,20 @@
 const ATTRIBUTE = "data-twitch-danmaku-button";
 const SVG = "http://www.w3.org/2000/svg";
 
-function path(d: string, attributes: Record<string, string> = {}): SVGPathElement {
-  const element = document.createElementNS(SVG, "path");
-  element.setAttribute("d", d);
+function svgElement<K extends keyof SVGElementTagNameMap>(
+  tag: K,
+  attributes: Record<string, string>,
+): SVGElementTagNameMap[K] {
+  const element = document.createElementNS(SVG, tag);
   for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
   return element;
 }
 
+const path = (d: string, attributes: Record<string, string> = {}) =>
+  svgElement("path", { d, ...attributes });
+
 function icon(enabled: boolean): SVGSVGElement {
-  const svg = document.createElementNS(SVG, "svg");
-  for (const [name, value] of Object.entries({
+  const svg = svgElement("svg", {
     "aria-hidden": "true",
     fill: "none",
     height: "20",
@@ -20,9 +24,7 @@ function icon(enabled: boolean): SVGSVGElement {
     "stroke-width": "2",
     viewBox: "0 0 20 20",
     width: "20",
-  })) {
-    svg.setAttribute(name, value);
-  }
+  });
   svg.append(
     path(
       "M6 4h9a2.5 2.5 0 012.5 2.5v4A2.5 2.5 0 0115 13h-4l-3.5 3v-3H6a2.5 2.5 0 01-2.5-2.5v-4A2.5 2.5 0 016 4z",

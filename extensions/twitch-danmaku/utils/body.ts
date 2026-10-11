@@ -25,48 +25,42 @@ export function toComment(parts: readonly Part[], emotes: EmoteIndex): Part[] | 
   return shown.length > 0 ? shown : undefined;
 }
 
+function appendText(parts: Part[], text: string): void {
+  const last = parts.at(-1);
+  if (last?.kind === "text") parts[parts.length - 1] = { kind: "text", text: last.text + text };
+  else parts.push({ kind: "text", text });
+}
+
 function collapseSpace(parts: readonly Part[]): Part[] {
-  const out: Part[] = [];
+  const merged: Part[] = [];
   for (const part of parts) {
-    if (part.kind === "emote") {
-      out.push(part);
-      continue;
-    }
-    const text = part.text.replaceAll(/\s+/g, " ");
-    const last = out.at(-1);
-    if (last?.kind === "text") out[out.length - 1] = { kind: "text", text: last.text + text };
-    else out.push({ kind: "text", text });
+    if (part.kind === "emote") merged.push(part);
+    else appendText(merged, part.text);
   }
-  const first = out[0];
-  if (first?.kind === "text") out[0] = { kind: "text", text: first.text.trimStart() };
-  const last = out.at(-1);
-  if (last?.kind === "text") out[out.length - 1] = { kind: "text", text: last.text.trimEnd() };
-  return out.filter((part) => part.kind === "emote" || part.text !== "");
+  const last = merged.length - 1;
+  return merged.flatMap((part, index): Part[] => {
+    if (part.kind === "emote") return [part];
+    let text = part.text.replaceAll(/\s+/g, " ");
+    if (index === 0) text = text.trimStart();
+    if (index === last) text = text.trimEnd();
+    return text ? [{ kind: "text", text }] : [];
+  });
 }
 
 export function applyEmotes(parts: readonly Part[], emotes: EmoteIndex): Part[] {
   if (emotes.size === 0) return [...parts];
   const out: Part[] = [];
-  let text = "";
   for (const part of parts) {
     if (part.kind === "emote") {
-      if (text) out.push({ kind: "text", text });
-      text = "";
       out.push(part);
       continue;
     }
     for (const piece of part.text.split(/(\s+)/)) {
       const emote = emotes.get(piece);
-      if (!emote) {
-        text += piece;
-        continue;
-      }
-      if (text) out.push({ kind: "text", text });
-      text = "";
-      out.push(emote);
+      if (emote) out.push(emote);
+      else if (piece) appendText(out, piece);
     }
   }
-  if (text) out.push({ kind: "text", text });
   return out;
 }
 
@@ -93,9 +87,7 @@ export function truncate(parts: readonly Part[], limit: number): Part[] {
 }
 
 function withEllipsis(parts: Part[]): Part[] {
-  const last = parts.at(-1);
-  if (last?.kind === "text") parts[parts.length - 1] = { kind: "text", text: `${last.text}…` };
-  else parts.push({ kind: "text", text: "…" });
+  appendText(parts, "…");
   return parts;
 }
 

@@ -52,6 +52,21 @@ describe("settings", () => {
     expect(changes).toEqual([{ laneCount: 12 }]);
   });
 
+  it("keeps each setting under its own sync storage key", async () => {
+    await saveSetting("enabled", false);
+    await saveSetting("area", 50);
+    await saveSetting("laneCount", 12);
+    await saveSetting("opacity", 60);
+    await saveSetting("crossingTime", 10);
+    expect(await browser.storage.sync.get()).toEqual({
+      enabled: false,
+      area: 50,
+      laneCount: 12,
+      opacity: 60,
+      crossingTime: 10,
+    });
+  });
+
   it("resets every setting to its default", async () => {
     await saveSetting("enabled", false);
     await saveSetting("crossingTime", 12);

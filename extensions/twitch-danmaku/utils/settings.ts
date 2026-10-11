@@ -8,7 +8,7 @@ export interface Settings {
   readonly crossingTime: number;
 }
 
-export type SliderKey = "area" | "crossingTime" | "laneCount" | "opacity";
+export type SliderKey = Exclude<keyof Settings, "enabled">;
 
 export interface Range {
   readonly min: number;
@@ -48,17 +48,29 @@ const FIELDS: { [K in keyof Settings]: (stored: unknown) => Settings[K] } = {
   crossingTime: readRanged("crossingTime"),
 };
 
-const KEYS = Object.keys(FIELDS) as (keyof Settings)[];
+const ITEMS = {
+  enabled: storage.defineItem<unknown>("sync:enabled"),
+  area: storage.defineItem<unknown>("sync:area"),
+  laneCount: storage.defineItem<unknown>("sync:laneCount"),
+  opacity: storage.defineItem<unknown>("sync:opacity"),
+  crossingTime: storage.defineItem<unknown>("sync:crossingTime"),
+} satisfies Record<keyof Settings, unknown>;
 
-const ITEMS = Object.fromEntries(
-  KEYS.map((key) => [key, storage.defineItem<unknown>(`sync:${key}`)]),
-) as Record<keyof Settings, ReturnType<typeof storage.defineItem<unknown>>>;
+const KEYS = Object.keys(ITEMS) as (keyof Settings)[];
+
+async function read<K extends keyof Settings>(key: K): Promise<Settings[K]> {
+  return FIELDS[key](await ITEMS[key].getValue());
+}
 
 export async function getSettings(): Promise<Settings> {
-  const values = await Promise.all(KEYS.map((key) => ITEMS[key].getValue()));
-  return Object.fromEntries(
-    KEYS.map((key, index) => [key, FIELDS[key](values[index])]),
-  ) as unknown as Settings;
+  const [enabled, area, laneCount, opacity, crossingTime] = await Promise.all([
+    read("enabled"),
+    read("area"),
+    read("laneCount"),
+    read("opacity"),
+    read("crossingTime"),
+  ]);
+  return { enabled, area, laneCount, opacity, crossingTime };
 }
 
 export function watchSettings(callback: (change: Partial<Settings>) => void): () => void {
