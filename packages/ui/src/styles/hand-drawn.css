@@ -1,0 +1,84 @@
+/*
+ * The icons' hand-drawn world: ink on paper, in light only. Import it right after `globals.css`;
+ * each extension then adds its accent, `::selection`, focus ring, and `title-squiggle`.
+ */
+
+/*
+ * Declared here rather than via @fontsource's CSS, which also ships a woff fallback Chrome never
+ * needs. Tailwind inlines this file into the importing entry and leaves `@`-prefixed URLs alone, so
+ * Vite resolves them from the extension: every extension that imports this file lists @fontsource/kalam.
+ */
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/kalam/files/kalam-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/kalam/files/kalam-latin-700-normal.woff2") format("woff2");
+}
+
+@theme {
+  --color-paper: #fffdf5;
+  --color-ink: #18181b;
+  --color-rust: #c42b31;
+  --color-rust-tint: #ffe9e7;
+  --font-hand: "Kalam", "Comic Sans MS", cursive;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+button {
+  cursor: pointer;
+}
+
+/*
+ * An ink outline drawn on a pseudo-element, so the `#wobble` filter roughens the stroke and fill
+ * without distorting the text. Set `--fill`, `--r`, and optionally `--edge` per element, and mount
+ * `WobbleFilter` (`@repo/ui/components/wobble-filter`) once per page.
+ */
+@utility wobbly {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border: 2.5px solid var(--edge, var(--color-ink));
+    border-radius: var(--r, 10px);
+    background: var(--fill, transparent);
+    filter: url(#wobble);
+  }
+}
+
+/* Inside `@theme`, so only pages that use `animate-wiggle-loop` ship the keyframes. */
+@theme {
+  @keyframes wiggle {
+    25% {
+      rotate: -1.6deg;
+    }
+    75% {
+      rotate: 1.6deg;
+    }
+  }
+}
+
+@utility animate-wiggle-loop {
+  animation: wiggle 1.2s ease-in-out infinite;
+}

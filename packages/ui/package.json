@@ -6,6 +6,7 @@
   "exports": {
     "./components/*": "./src/components/*.tsx",
     "./globals.css": "./src/styles/globals.css",
+    "./hand-drawn.css": "./src/styles/hand-drawn.css",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/*": "./src/lib/*.ts"
   },
@@ -14,11 +15,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
     "@fontsource-variable/geist": "^5.3.0",
-    "class-variance-authority": "^0.7.1",
+    "@fontsource/kalam": "^5.3.0",
     "cn": "^0.4.0",
-    "lucide-react": "^1.51.0",
     "shadcn": "^4.21.1",
     "tailwindcss": "^4.3.3",
     "tw-animate-css": "^1.4.0"

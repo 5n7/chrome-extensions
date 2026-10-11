@@ -1,10 +1,10 @@
+import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { cn } from "@repo/ui/lib/utils";
 import { useEffect, useRef, useState } from "react";
 
 import { browser, type Browser } from "#imports";
 import iconUrl from "@/assets/icon.svg";
 import { ErrorNote } from "@/components/error-note";
-import { WobbleFilter } from "@/components/wobble-filter";
 import { POPUP_PORT, type PageState, type PickedMessage } from "@/utils/page-state";
 import {
   findChannelRule,

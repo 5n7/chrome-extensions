@@ -1,9 +1,9 @@
+import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { cn } from "@repo/ui/lib/utils";
 import { useEffect, useState, type ReactNode } from "react";
 
 import iconUrl from "@/assets/icon.svg";
 import { ErrorNote } from "@/components/error-note";
-import { WobbleFilter } from "@/components/wobble-filter";
 import {
   channelNamesItem,
   describeSaveError,

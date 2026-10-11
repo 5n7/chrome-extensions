@@ -1,3 +1,5 @@
+import { ErrorNote } from "@repo/ui/components/error-note";
+import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { useEffect, useState } from "react";
 
 import iconUrl from "@/assets/icon.svg";
@@ -131,14 +133,7 @@ export function App() {
         ))}
       </div>
 
-      {error && (
-        <p
-          className="wobbly text-rust px-3 py-2 text-[15px] leading-snug font-bold [--fill:#ffe9e7]"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
+      {error && <ErrorNote>{error}</ErrorNote>}
 
       <footer className="pfoot text-ink/75 flex justify-end pt-2.5 text-[15px]">
         <button
@@ -150,16 +145,5 @@ export function App() {
         </button>
       </footer>
     </main>
-  );
-}
-
-function WobbleFilter() {
-  return (
-    <svg aria-hidden className="absolute size-0">
-      <filter height="180%" id="wobble" width="120%" x="-10%" y="-40%">
-        <feTurbulence baseFrequency=".035" numOctaves={2} seed={3} type="fractalNoise" />
-        <feDisplacementMap in="SourceGraphic" scale={4} />
-      </filter>
-    </svg>
   );
 }

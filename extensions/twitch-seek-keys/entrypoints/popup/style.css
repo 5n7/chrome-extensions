@@ -1,75 +1,20 @@
 @import "@repo/ui/globals.css";
+@import "@repo/ui/hand-drawn.css";
 @source "..";
 
-/* Declared here rather than via @fontsource's CSS, which also ships a woff fallback Chrome never needs. */
-@font-face {
-  font-family: "Kalam";
-  font-style: normal;
-  font-display: swap;
-  font-weight: 400;
-  src: url("@fontsource/kalam/files/kalam-latin-400-normal.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Kalam";
-  font-style: normal;
-  font-display: swap;
-  font-weight: 700;
-  src: url("@fontsource/kalam/files/kalam-latin-700-normal.woff2") format("woff2");
-}
-
-/* The popup carries the icon's hand-drawn world: ink on paper, in light only. */
 @theme {
-  --color-paper: #fffdf5;
-  --color-ink: #18181b;
   --color-twitch: #9146ff;
   --color-lilac: #ece2ff;
-  --color-rust: #c42b31;
-  --font-hand: "Kalam", "Comic Sans MS", cursive;
-}
-
-:root {
-  color-scheme: light;
-}
-
-body {
-  background: var(--color-paper);
-  color: var(--color-ink);
 }
 
 ::selection {
   background: var(--color-lilac);
 }
 
-button {
-  cursor: pointer;
-}
-
 button:focus-visible {
   outline: 2px solid var(--color-twitch);
   outline-offset: 3px;
   border-radius: var(--r, 6px);
-}
-
-/*
- * An ink outline drawn on a pseudo-element, so the `#wobble` filter roughens the
- * stroke and fill without distorting the text. Set `--fill` and `--r` per element.
- */
-@utility wobbly {
-  position: relative;
-  isolation: isolate;
-
-  &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    border: 2.5px solid var(--color-ink);
-    border-radius: var(--r, 10px);
-    background: var(--fill, transparent);
-    filter: url(#wobble);
-  }
 }
 
 /* A wobbly underline under a field, inked in purple while it has focus. */
@@ -90,19 +35,6 @@ button:focus-visible {
     border-color: var(--color-twitch);
     opacity: 1;
   }
-}
-
-@keyframes wiggle {
-  25% {
-    transform: rotate(-1.6deg);
-  }
-  75% {
-    transform: rotate(1.6deg);
-  }
-}
-
-@utility animate-wiggle-loop {
-  animation: wiggle 1.2s ease-in-out infinite;
 }
 
 @keyframes spin-back {

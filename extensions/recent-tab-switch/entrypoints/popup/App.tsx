@@ -1,3 +1,5 @@
+import { ErrorNote } from "@repo/ui/components/error-note";
+import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { browser } from "#imports";
@@ -101,14 +103,7 @@ export function App() {
         open={!bound}
         onCopyAndOpen={() => void copyAndOpen()}
       />
-      {error && (
-        <p
-          className="wobbly text-rust px-3 py-2 text-[15px] leading-snug font-bold [--fill:#ffe9e7]"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
+      {error && <ErrorNote>{error}</ErrorNote>}
     </main>
   );
 }
@@ -178,17 +173,5 @@ function Step({ children, n }: { children: ReactNode; n: number }) {
       </span>
       <div className="grid">{children}</div>
     </li>
-  );
-}
-
-/** Roughens outlines the way the icon's own filter roughens its strokes. */
-function WobbleFilter() {
-  return (
-    <svg aria-hidden className="absolute size-0">
-      <filter height="180%" id="wobble" width="120%" x="-10%" y="-40%">
-        <feTurbulence baseFrequency=".035" numOctaves={2} seed={3} type="fractalNoise" />
-        <feDisplacementMap in="SourceGraphic" scale={4} />
-      </filter>
-    </svg>
   );
 }

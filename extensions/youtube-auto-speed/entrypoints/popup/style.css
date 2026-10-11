@@ -1,4 +1,6 @@
 @import "@repo/ui/globals.css";
+@import "@repo/ui/hand-drawn.css";
 @import "../../assets/theme.css";
 /* The extension root, so Tailwind also scans `components/`. */
 @source "../..";
+@source not "../../**/*.test.*";

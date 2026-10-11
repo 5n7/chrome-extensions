@@ -5,7 +5,7 @@ Monorepo of personal Chrome extensions built with WXT, React, and shadcn/ui on B
 ## Layout
 
 - `extensions/<name>/` — one WXT project per extension, package name `<name>` (unscoped, so zips are named `<name>-<version>-chrome.zip`).
-- `packages/ui/` — shared shadcn/ui components and the Tailwind theme (`globals.css`).
+- `packages/ui/` — shared UI: the Tailwind theme (`globals.css`), the hand-drawn kit (`hand-drawn.css`, `WobbleFilter`, `ErrorNote`), and any shadcn/ui components added later.
 - `packages/tsconfig/` — strict base config.
 - `CONTEXT-MAP.md` — index of each extension's domain glossary (`extensions/<name>/CONTEXT.md`); use its terms in code and docs.
 
@@ -17,10 +17,10 @@ Templates are deliberately absent until a few extensions exist; model a new one 
 - devDependencies: `@repo/tsconfig`, `typescript`, `vitest`, `web-ext` (lets `wxt` launch Chrome), `wxt`.
 - `tsconfig.json` extends `["./.wxt/tsconfig.json", "@repo/tsconfig/base.json"]` in that order, so the base wins on overlapping options.
 - `wxt.config.ts` sets `imports: false` (explicit imports only) and `webExt.chromiumArgs: ["--user-data-dir=./.wxt/chrome-data"]` for a persistent dev profile.
-- React UI: depend on `@repo/ui`, `react`, `react-dom`; add devDependencies `@rolldown/plugin-babel`, `@tailwindcss/vite`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `@wxt-dev/module-react`, `babel-plugin-react-compiler` (an optional peer, so Bun skips it unless listed), `tailwindcss`. In `wxt.config.ts`, add the `@wxt-dev/module-react` module and `vite` plugins `babel({ presets: [reactCompilerPreset()] })` and `tailwindcss()`.
+- React UI: depend on `@repo/ui`, `react`, `react-dom`; add devDependencies `@rolldown/plugin-babel`, `@tailwindcss/vite`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `@wxt-dev/module-react`, `babel-plugin-react-compiler` (an optional peer, so Bun skips it unless listed), `tailwindcss`. In `wxt.config.ts`, add the `@wxt-dev/module-react` module and `vite` plugins `babel({ presets: [reactCompilerPreset()] })` and `tailwindcss()`. In each page, mount `WobbleFilter` from `@repo/ui/components/wobble-filter` once for the `wobbly` outlines, and show a failed save with `ErrorNote` from `@repo/ui/components/error-note`.
 - Icon: draw a 128 px master `assets/icon.svg` plus pixel-fitted toolbar masters `assets/icon-16.svg` and `assets/icon-32.svg` (Chrome's toolbar uses 32 px on 2x screens), then copy `modules/icons.ts` from an existing extension (devDependency `sharp`); WXT auto-loads it to render every manifest size and grey out dev builds.
 - README card: draw `assets/readme-doodle.svg` (260 × 170, in the icon's style) showing what the extension does, then run `bun run readme` from the root to redraw `.github/readme/` and the README's extension list from each extension's icon, doodle, and `package.json` description.
-- CSS entry: `@import "@repo/ui/globals.css";` followed by `@source "..";` so Tailwind scans the extension's own files; widen it to the extension root (`"../.."` from `entrypoints/<page>/`) once shared components live outside `entrypoints/`.
+- CSS entry: `@import "@repo/ui/globals.css";` and `@import "@repo/ui/hand-drawn.css";` (the shared ink-on-paper kit; depend on `@fontsource/kalam`, whose font URLs resolve from the extension) followed by `@source "..";` so Tailwind scans the extension's own files, and `@source not "../**/*.test.*";` so words in tests never become classes; widen it to the extension root (`"../.."` from `entrypoints/<page>/`) once shared components live outside `entrypoints/`.
 - Tests: `vitest.config.ts` with `WxtVitest({ root: import.meta.dirname })` from `wxt/testing/vitest-plugin`; the root `vitest.config.ts` picks it up as a project.
 
 ## Conventions

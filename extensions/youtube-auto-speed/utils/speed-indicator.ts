@@ -1,4 +1,5 @@
 import kalam from "@fontsource/kalam/files/kalam-latin-700-normal.woff2?inline";
+import { WOBBLE } from "@repo/ui/lib/wobble";
 
 import { formatSpeed, type Speed } from "./speed";
 
@@ -36,17 +37,12 @@ function svgElement<K extends keyof SVGElementTagNameMap>(
   return element;
 }
 
-/** The icon's wobble, so the sticker's outline is roughened the way the popup's are. */
+/** The popup's `#wobble`, so the sticker's outline is roughened the way the popup's are. */
 function createWobbleFilter(): SVGSVGElement {
   const svg = svgElement("svg", { "aria-hidden": "true" }, [
-    svgElement("filter", { height: "180%", id: FILTER_ID, width: "120%", x: "-10%", y: "-40%" }, [
-      svgElement("feTurbulence", {
-        baseFrequency: ".035",
-        numOctaves: "2",
-        seed: "3",
-        type: "fractalNoise",
-      }),
-      svgElement("feDisplacementMap", { in: "SourceGraphic", scale: "4" }),
+    svgElement("filter", { ...WOBBLE.region, id: FILTER_ID }, [
+      svgElement("feTurbulence", WOBBLE.turbulence),
+      svgElement("feDisplacementMap", WOBBLE.displacement),
     ]),
   ]);
   Object.assign(svg.style, { height: "0", position: "absolute", width: "0" });
