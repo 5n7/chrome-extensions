@@ -1,4 +1,4 @@
-import { defineContentScript } from "#imports";
+import { browser, defineContentScript } from "#imports";
 import { findPlayerVideo, isSeekablePath, ownsKeyboard, seek } from "@/utils/player";
 import { findSeekBinding, seekBindings, type SeekBinding } from "@/utils/seek-bindings";
 import { createSeekIndicator } from "@/utils/seek-indicator";
@@ -8,7 +8,12 @@ export default defineContentScript({
   async main(ctx) {
     // Watch before reading so a change made in between is not lost.
     let changed: SeekBinding[] | undefined;
-    ctx.onInvalidated(seekBindings.watch((next) => (changed = next)));
+    const unwatch = seekBindings.watch((next) => (changed = next));
+    ctx.onInvalidated(() => {
+      // Once the extension reloads, this script is orphaned and any storage call throws; its
+      // listeners can no longer fire, so there is nothing to remove.
+      if (browser.runtime?.id) unwatch();
+    });
     const initial = await seekBindings.getValue();
     const indicator = createSeekIndicator();
     ctx.onInvalidated(() => indicator.remove());

@@ -79,7 +79,6 @@ export default defineContentScript({
       port.postMessage(pageState());
     };
     browser.runtime.onConnect.addListener(onConnect);
-    ctx.onInvalidated(() => browser.runtime.onConnect.removeListener(onConnect));
 
     /** Whether the extension controls the player now: the Target Video itself, or an ad within it. */
     function controlling(): boolean {
@@ -215,7 +214,16 @@ export default defineContentScript({
       adoptSettings(await getSettings(), true);
     }
 
-    ctx.onInvalidated(watchSettings((change) => adoptSettings({ ...settings, ...change }, false)));
+    const unwatchSettings = watchSettings((change) =>
+      adoptSettings({ ...settings, ...change }, false),
+    );
+    ctx.onInvalidated(() => {
+      // Once the extension reloads, this script is orphaned and any chrome.* call throws; its
+      // listeners can no longer fire, so there is nothing to remove.
+      if (!browser.runtime?.id) return;
+      browser.runtime.onConnect.removeListener(onConnect);
+      unwatchSettings();
+    });
     settings = await getSettings();
 
     for (const type of NAVIGATION_EVENTS) {

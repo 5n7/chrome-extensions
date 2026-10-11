@@ -1,4 +1,4 @@
-import { defineContentScript } from "#imports";
+import { browser, defineContentScript } from "#imports";
 import { guard } from "@/utils/guard";
 
 import "./style.css";
@@ -16,12 +16,15 @@ export default defineContentScript({
     apply(true);
     // Watch before reading so a change made in between is not lost.
     let changed = false;
-    ctx.onInvalidated(
-      guard.watch((next) => {
-        changed = true;
-        apply(next);
-      }),
-    );
+    const unwatch = guard.watch((next) => {
+      changed = true;
+      apply(next);
+    });
+    ctx.onInvalidated(() => {
+      // Once the extension reloads, this script is orphaned and any storage call throws; its
+      // listeners can no longer fire, so there is nothing to remove.
+      if (browser.runtime?.id) unwatch();
+    });
     const initial = await guard.getValue();
     if (!changed) apply(initial);
     // A page restored from the back/forward cache missed any change made while it was away.

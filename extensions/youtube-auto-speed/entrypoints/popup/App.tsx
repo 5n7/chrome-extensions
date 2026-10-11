@@ -47,6 +47,9 @@ function useTabState(): [PopupState, () => void] {
       portRef.current = port;
       port.onMessage.addListener((message) => setState(message as PageState));
       port.onDisconnect.addListener(() => {
+        // A tab without the content script refuses the port. Reading the error tells Chrome that
+        // was expected, so it logs no "Unchecked runtime.lastError".
+        void browser.runtime.lastError;
         portRef.current = undefined;
         setState(onYouTube ? { kind: "reload", tabId } : { kind: "none" });
       });
