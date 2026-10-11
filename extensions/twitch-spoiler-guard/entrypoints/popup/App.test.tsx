@@ -132,4 +132,14 @@ describe("stamp while the Guard is on", () => {
     await click(stamp);
     expect(status()).toBe("Press again to turn the Guard off.");
   });
+
+  it("forgets a hold key released after focus leaves the stamp", async () => {
+    const stamp = await render(true);
+    await act(async () => stamp.focus());
+    await dispatch(stamp, key("keydown", " "));
+    await act(async () => stamp.blur());
+    await dispatch(document.body, key("keyup", " "));
+    await click(stamp);
+    expect(status()).toBe("Press again to turn the Guard off.");
+  });
 });

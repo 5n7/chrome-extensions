@@ -105,7 +105,11 @@ export function App() {
           on ? "text-white [--fill:var(--color-twitch)]" : "[--fill:var(--color-lilac)]",
         )}
         type="button"
-        onBlur={() => setHold(undefined)}
+        onBlur={() => {
+          setHold(undefined);
+          // The hold key's keyup now lands elsewhere, so it can no longer clear the press.
+          press.current = "none";
+        }}
         onClick={() => {
           const last = press.current;
           press.current = "none";
