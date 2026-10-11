@@ -33,6 +33,15 @@ Templates are deliberately absent until a few extensions exist; model a new one 
 - Declare dependency versions directly in each `package.json`. Bun `catalog:` stays unused because Dependabot skips catalog entries.
 - Run WXT on Node (`bun run dev`, never `bun --bun`); WXT is unreliable on the Bun runtime.
 
+## Browser verification
+
+A visible Chrome playing video saturates WindowServer and freezes keyboard and trackpad input on this fanless Mac, even while overall CPU usage looks low.
+
+- Launch Playwright headless: `launchPersistentContext(profile, { channel: "chromium", headless: true, args })`. The `chromium` channel's new headless mode loads extensions; the default headless shell does not.
+- Mute media (`--mute-audio`) and keep the viewport no larger than the check needs.
+- Run one browser at a time: never give browser work to parallel subagents.
+- Close every context in a `finally` block, and run `pkill -f "Chrome for Testing"` before finishing to kill any browser a crashed script left behind.
+
 ## Gotchas
 
 - Content-script UI in a Shadow DOM (`createShadowRootUi`) is only partly covered: theme tokens are defined on `:root, :host`, but `@property` rules are ignored inside shadow roots (shadows, rings, gradients lose their defaults), `@font-face` (Geist) does not apply there, and `rem` follows the host page's root font size. Hoist `@property` and `@font-face` rules to the document and size UI in `px` before shipping such a UI.
