@@ -152,8 +152,10 @@ function Setup({ code, copyByHand, open, onCopyAndOpen }: SetupProps) {
           </pre>
         </Step>
         <Step n={2}>
-          There, open DevTools with <b>{DEVTOOLS_KEYS}</b>, paste the code into the Console, and
-          press Enter. If Chrome asks, type <b>allow pasting</b> first.
+          <p>
+            There, open DevTools with <b>{DEVTOOLS_KEYS}</b>, paste the code into the Console, and
+            press Enter. If Chrome asks, type <b>allow pasting</b> first.
+          </p>
         </Step>
         <Step n={3}>Reopen this popup to check the shortcuts above.</Step>
       </ol>
