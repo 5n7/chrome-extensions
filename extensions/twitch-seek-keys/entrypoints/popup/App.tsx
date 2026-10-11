@@ -34,6 +34,20 @@ interface Highlight {
 const HIGHLIGHT_MS = { added: 1200, pressed: 600 };
 const RESTORED_MS = 1200;
 
+const KEY_FILL = {
+  added: "[--fill:var(--color-lilac)]",
+  idle: "[--fill:#fff]",
+  pressed: "text-white [--fill:var(--color-twitch)]",
+} satisfies Record<Highlight["kind"] | "idle", string>;
+
+const DIRECTION_SWITCH = {
+  backward: { fill: "[--fill:var(--color-lilac)]", flipsTo: "forward", word: "back" },
+  forward: { fill: "text-white [--fill:var(--color-twitch)]", flipsTo: "backward", word: "ahead" },
+} as const satisfies Record<
+  SeekOffset["direction"],
+  { fill: string; flipsTo: SeekOffset["direction"]; word: string }
+>;
+
 // Played through the Web Animations API, so a replay never fights a CSS animation for the same property.
 const WIGGLE: Keyframe[] = [
   { transform: "rotate(0)" },
@@ -262,7 +276,8 @@ function BindingRow({
   onChange: (offset: SeekOffset) => void;
   onRemove: () => void;
 }) {
-  const backward = binding.offset.direction === "backward";
+  const { direction } = binding.offset;
+  const flip = DIRECTION_SWITCH[direction];
   const label = combinationLabel(binding.combination);
   const rowRef = useRef<HTMLLIElement>(null);
   const wiggle = highlight?.id;
@@ -292,11 +307,7 @@ function BindingRow({
             key={part}
             className={cn(
               "wobbly font-hand inline-grid h-8 min-w-[34px] place-items-center px-[9px] text-[17px] leading-none font-bold [--r:8px]",
-              highlight?.kind === "pressed"
-                ? "text-white [--fill:var(--color-twitch)]"
-                : highlight?.kind === "added"
-                  ? "[--fill:var(--color-lilac)]"
-                  : "[--fill:#fff]",
+              KEY_FILL[highlight?.kind ?? "idle"],
             )}
           >
             {part}
@@ -305,31 +316,17 @@ function BindingRow({
       </span>
       <button
         // Starts with the visible word, so voice control can target it by what it shows.
-        aria-label={
-          backward
-            ? `back: ${label} seeks backward, switch to forward`
-            : `ahead: ${label} seeks forward, switch to backward`
-        }
+        aria-label={`${flip.word}: ${label} seeks ${direction}, switch to ${flip.flipsTo}`}
         className={cn(
           "wobbly inline-flex items-center gap-1 py-[5px] pr-3 pl-[9px] text-[15px] leading-none font-bold transition-transform [--r:999px] motion-safe:hover:-rotate-3",
-          backward ? "[--fill:var(--color-lilac)]" : "text-white [--fill:var(--color-twitch)]",
+          flip.fill,
         )}
         type="button"
-        onClick={() =>
-          onChange({ ...binding.offset, direction: backward ? "forward" : "backward" })
-        }
+        onClick={() => onChange({ ...binding.offset, direction: flip.flipsTo })}
       >
-        {backward ? (
-          <>
-            <ChevronsLeftIcon className="size-[15px]" strokeWidth={2.4} />
-            back
-          </>
-        ) : (
-          <>
-            ahead
-            <ChevronsRightIcon className="size-[15px]" strokeWidth={2.4} />
-          </>
-        )}
+        {direction === "backward" && <ChevronsLeftIcon className="size-[15px]" strokeWidth={2.4} />}
+        {flip.word}
+        {direction === "forward" && <ChevronsRightIcon className="size-[15px]" strokeWidth={2.4} />}
       </button>
       <SecondsInput
         // Remount when the stored value changes elsewhere, e.g. after restoring defaults.

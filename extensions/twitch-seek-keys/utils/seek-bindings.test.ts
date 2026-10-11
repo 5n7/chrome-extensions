@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import {
+  combination,
   DEFAULT_BINDINGS,
   findSeekBinding,
   formatCombination,
@@ -9,17 +10,7 @@ import {
   isValidSeconds,
   seekBindings,
   toKeyCombination,
-  type KeyCombination,
 } from "./seek-bindings";
-
-const key = (code: string, modifiers: Partial<KeyCombination> = {}): KeyCombination => ({
-  altKey: false,
-  code,
-  ctrlKey: false,
-  metaKey: false,
-  shiftKey: false,
-  ...modifiers,
-});
 
 describe("seekBindings", () => {
   beforeEach(() => fakeBrowser.reset());
@@ -50,30 +41,36 @@ describe("seekBindings", () => {
 
 describe("toKeyCombination", () => {
   it("keeps only the key and its modifiers from a keyboard event", () => {
-    const event = { ...key("KeyJ", { shiftKey: true }), key: "J", repeat: true };
-    expect(toKeyCombination(event)).toEqual(key("KeyJ", { shiftKey: true }));
+    const event = { ...combination("KeyJ", { shiftKey: true }), key: "J", repeat: true };
+    expect(toKeyCombination(event)).toEqual(combination("KeyJ", { shiftKey: true }));
   });
 });
 
 describe("findSeekBinding", () => {
   it("tells Key Combinations apart by their exact modifiers", () => {
-    expect(findSeekBinding(DEFAULT_BINDINGS, key("ArrowLeft"))?.offset.seconds).toBe(5);
+    expect(findSeekBinding(DEFAULT_BINDINGS, combination("ArrowLeft"))?.offset.seconds).toBe(5);
     expect(
-      findSeekBinding(DEFAULT_BINDINGS, key("ArrowLeft", { shiftKey: true }))?.offset.seconds,
+      findSeekBinding(DEFAULT_BINDINGS, combination("ArrowLeft", { shiftKey: true }))?.offset
+        .seconds,
     ).toBe(60);
-    expect(findSeekBinding(DEFAULT_BINDINGS, key("ArrowLeft", { altKey: true }))).toBeUndefined();
+    expect(
+      findSeekBinding(DEFAULT_BINDINGS, combination("ArrowLeft", { altKey: true })),
+    ).toBeUndefined();
   });
 });
 
 describe("formatCombination", () => {
   it("labels modifiers and keys", () => {
-    expect(formatCombination(key("ArrowRight", { shiftKey: true }))).toEqual(["Shift", "→"]);
-    expect(formatCombination(key("KeyJ", { ctrlKey: true, metaKey: true }))).toEqual([
+    expect(formatCombination(combination("ArrowRight", { shiftKey: true }))).toEqual([
+      "Shift",
+      "→",
+    ]);
+    expect(formatCombination(combination("KeyJ", { ctrlKey: true, metaKey: true }))).toEqual([
       "Ctrl",
       "Meta",
       "J",
     ]);
-    expect(formatCombination(key("Digit5"))).toEqual(["5"]);
+    expect(formatCombination(combination("Digit5"))).toEqual(["5"]);
   });
 });
 

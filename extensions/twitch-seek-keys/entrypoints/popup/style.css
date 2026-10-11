@@ -1,6 +1,7 @@
 @import "@repo/ui/globals.css";
 @import "@repo/ui/hand-drawn.css";
 @source "..";
+@source not "../**/*.test.*";
 
 @theme {
   --color-twitch: #9146ff;

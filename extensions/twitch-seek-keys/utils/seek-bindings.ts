@@ -37,7 +37,7 @@ const KEY_LABELS: Record<string, string> = {
   ArrowUp: "↑",
 };
 
-function combination(code: string, modifiers: Partial<KeyCombination> = {}): KeyCombination {
+export function combination(code: string, modifiers: Partial<KeyCombination> = {}): KeyCombination {
   return { altKey: false, code, ctrlKey: false, metaKey: false, shiftKey: false, ...modifiers };
 }
 
@@ -78,7 +78,7 @@ export function isModifierKey(event: Pick<KeyboardEvent, "code">): boolean {
   return MODIFIER_CODES.has(event.code);
 }
 
-export function isSameCombination(a: KeyCombination, b: KeyCombination): boolean {
+function isSameCombination(a: KeyCombination, b: KeyCombination): boolean {
   return (
     a.code === b.code &&
     a.altKey === b.altKey &&
@@ -99,7 +99,7 @@ export function isValidSeconds(seconds: number): boolean {
   return Number.isInteger(seconds) && seconds >= MIN_SECONDS && seconds <= MAX_SECONDS;
 }
 
-export function formatKey(code: string): string {
+function formatKey(code: string): string {
   return KEY_LABELS[code] ?? code.replace(/^(Key|Digit)/, "");
 }
 
