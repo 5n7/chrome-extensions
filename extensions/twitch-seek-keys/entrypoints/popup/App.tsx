@@ -22,6 +22,10 @@ import {
 
 const NEW_BINDING_OFFSET: SeekOffset = { direction: "forward", seconds: 10 };
 
+// Recording waits past these as it does past modifiers: Tab so the keyboard can still leave, Caps
+// Lock because it only toggles case, and codes some virtual keyboards send instead of a real key.
+const IGNORED_CODES = new Set(["", "CapsLock", "Tab", "Unidentified"]);
+
 /** A row that just matched a key press, or was just added. */
 interface Highlight {
   /** The row's Key Combination as shown, e.g. `Shift+J`. */
@@ -151,8 +155,7 @@ export function App() {
       }
       return;
     }
-    // Wait for the non-modifier key; some virtual keyboards send no physical code at all.
-    if (isModifierKey(event) || !event.code || event.code === "Unidentified") return;
+    if (isModifierKey(event) || IGNORED_CODES.has(event.code)) return;
     event.preventDefault();
     event.stopPropagation();
     setRecording(false);
@@ -241,6 +244,8 @@ export function App() {
             : "text-white [--fill:var(--color-twitch)] motion-safe:hover:-translate-y-px motion-safe:hover:-rotate-1",
         )}
         type="button"
+        // Leaving the button stops recording, so a later key pressed elsewhere stays there.
+        onBlur={() => setRecording(false)}
         onClick={() => {
           setError(undefined);
           setRecording(!recording);
@@ -381,7 +386,8 @@ function SecondsInput({
         onBlur={commit}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
+          // An IME confirms its conversion with Enter too, which must not end the typing.
+          if (event.key === "Enter" && !event.nativeEvent.isComposing) event.currentTarget.blur();
         }}
       />
       <span className="text-sm">s</span>

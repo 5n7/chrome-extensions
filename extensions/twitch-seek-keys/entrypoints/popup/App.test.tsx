@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { combination, seekBindings } from "@/utils/seek-bindings";
+import { combination, DEFAULT_BINDINGS, seekBindings } from "@/utils/seek-bindings";
 
 import { App } from "./App";
 
@@ -75,19 +75,55 @@ describe("recording", () => {
       offset: { direction: "forward", seconds: 10 },
     });
   });
+
+  it("waits past Tab and Caps Lock, leaving Tab to move focus", async () => {
+    const add = button("Add a key");
+    await click(add);
+    expect((await keyDown(add, { code: "Tab", key: "Tab" })).defaultPrevented).toBe(false);
+    expect((await keyDown(add, { code: "CapsLock", key: "CapsLock" })).defaultPrevented).toBe(
+      false,
+    );
+    expect((await keyDown(add, { code: "KeyK", key: "k" })).defaultPrevented).toBe(true);
+    const bindings = await seekBindings.getValue();
+    expect(bindings).toHaveLength(DEFAULT_BINDINGS.length + 1);
+    expect(bindings.at(-1)?.combination).toEqual(combination("KeyK"));
+  });
+
+  it("stops once focus leaves the button, so a key pressed elsewhere stays there", async () => {
+    const add = button("Add a key");
+    await act(async () => add.focus());
+    await click(add);
+    const elsewhere = button("back: ← seeks backward, switch to forward");
+    await act(async () => elsewhere.focus());
+    expect((await keyDown(elsewhere, { code: "KeyK", key: "k" })).defaultPrevented).toBe(false);
+    expect(await seekBindings.getValue()).toEqual(DEFAULT_BINDINGS);
+    expect(add.textContent).toBe("Add a key");
+  });
 });
 
 describe("seconds field", () => {
-  it("saves a typed value on Enter", async () => {
+  async function typeSeconds(value: string): Promise<HTMLInputElement> {
     const input = container.querySelector<HTMLInputElement>('input[aria-label^="Seconds for ←,"]');
     if (!input) throw new Error("No seconds field for ←");
     await act(async () => {
       input.focus();
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, "45");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
+    return input;
+  }
+
+  it("saves a typed value on Enter", async () => {
+    const input = await typeSeconds("45");
     await keyDown(input, { key: "Enter" });
     expect(document.activeElement).not.toBe(input);
     expect((await seekBindings.getValue())[0]?.offset.seconds).toBe(45);
+  });
+
+  it("keeps typing through the Enter that confirms an IME conversion", async () => {
+    const input = await typeSeconds("45");
+    await keyDown(input, { isComposing: true, key: "Enter" });
+    expect(document.activeElement).toBe(input);
+    expect((await seekBindings.getValue())[0]?.offset.seconds).toBe(5);
   });
 });
