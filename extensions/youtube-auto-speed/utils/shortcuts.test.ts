@@ -1,12 +1,7 @@
+import { combination } from "@repo/wxt-kit/keyboard";
 import { describe, expect, it } from "vitest";
 
-import {
-  combination,
-  DEFAULT_SHORTCUTS,
-  findDirection,
-  formatCombination,
-  readShortcuts,
-} from "./shortcuts";
+import { DEFAULT_SHORTCUTS, findDirection, readShortcuts } from "./shortcuts";
 
 const press = (code: string, key: string, modifiers: Parameters<typeof combination>[1] = {}) => ({
   ...combination(code, modifiers),
@@ -48,14 +43,5 @@ describe("readShortcuts", () => {
     expect(readShortcuts({ speedDown: combination("KeyA") })).toEqual(DEFAULT_SHORTCUTS);
     const stored = { speedDown: combination("KeyA"), speedUp: combination("KeyB") };
     expect(readShortcuts(stored)).toEqual(stored);
-  });
-});
-
-describe("formatCombination", () => {
-  it("names keys the way they are printed", () => {
-    expect(formatCombination(combination("KeyS", { shiftKey: true }))).toEqual(["Shift", "S"]);
-    expect(formatCombination(combination("ArrowLeft"))).toEqual(["←"]);
-    expect(formatCombination(combination("Comma"))).toEqual([","]);
-    expect(formatCombination(combination("Space"))).toEqual(["Space"]);
   });
 });

@@ -1,16 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
+import { browser } from "#imports";
+
 import {
   channelName,
   channelNamesItem,
-  channelRulesItem,
-  defaultSpeedItem,
   getSettings,
   INITIAL_SETTINGS,
   rememberChannelName,
-  saveSetting,
-  shortcutsItem,
 } from "./settings";
 
 describe("settings", () => {
@@ -20,11 +18,13 @@ describe("settings", () => {
     expect(await getSettings()).toEqual(INITIAL_SETTINGS);
   });
 
-  it("falls back per setting, keeping the well-formed ones", async () => {
-    await defaultSpeedItem.setValue(1.25);
-    await shortcutsItem.setValue("junk");
-    await channelRulesItem.setValue([{ handle: "@a", id: "a", speed: 2 }, { id: "b" }]);
-    await saveSetting("titleRules", [{ id: "t", pattern: "asmr", speed: 1 }]);
+  it("reads each setting from its own sync key, falling back alone when malformed", async () => {
+    await browser.storage.sync.set({
+      defaultSpeed: 1.25,
+      titleRules: [{ id: "t", pattern: "asmr", speed: 1 }],
+      channelRules: [{ handle: "@a", id: "a", speed: 2 }, { id: "b" }],
+      shortcuts: "junk",
+    });
     expect(await getSettings()).toEqual({
       ...INITIAL_SETTINGS,
       channelRules: [{ handle: "@a", id: "a", speed: 2 }],

@@ -1,14 +1,15 @@
 import { ErrorNote } from "@repo/ui/components/error-note";
 import { WobbleFilter } from "@repo/ui/components/wobble-filter";
+import { describeSaveError } from "@repo/wxt-kit/settings";
 import { useEffect, useState } from "react";
 
 import iconUrl from "@/assets/icon.svg";
 import {
+  followSettings,
   getSettings,
   RANGES,
   resetSettings,
   saveSetting,
-  watchSettings,
   type Settings,
   type SliderKey,
 } from "@/utils/settings";
@@ -44,11 +45,7 @@ export function App() {
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [error, setError] = useState<string>();
 
-  useEffect(() => {
-    const unwatch = watchSettings((change) => setSettings((old) => old && { ...old, ...change }));
-    void getSettings().then(setSettings);
-    return unwatch;
-  }, []);
+  useEffect(() => followSettings(setSettings).stop, []);
 
   useEffect(() => {
     if (!confirmingReset) return;
@@ -61,8 +58,8 @@ export function App() {
     setError(undefined);
     try {
       await saveSetting(key, value);
-    } catch {
-      setError("Couldn't save. Try again shortly.");
+    } catch (error) {
+      setError(describeSaveError(error));
       setSettings(await getSettings());
     }
   }
@@ -81,8 +78,8 @@ export function App() {
     setError(undefined);
     try {
       await resetSettings();
-    } catch {
-      setError("Couldn't reset. Try again shortly.");
+    } catch (error) {
+      setError(describeSaveError(error));
     }
   }
 

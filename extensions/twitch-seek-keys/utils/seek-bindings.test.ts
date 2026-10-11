@@ -1,15 +1,13 @@
+import { combination, formatCombination } from "@repo/wxt-kit/keyboard";
 import { beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import {
-  combination,
   DEFAULT_BINDINGS,
   findSeekBinding,
-  formatCombination,
   formatOffset,
   isValidSeconds,
   seekBindings,
-  toKeyCombination,
 } from "./seek-bindings";
 
 describe("seekBindings", () => {
@@ -39,13 +37,6 @@ describe("seekBindings", () => {
   });
 });
 
-describe("toKeyCombination", () => {
-  it("keeps only the key and its modifiers from a keyboard event", () => {
-    const event = { ...combination("KeyJ", { shiftKey: true }), key: "J", repeat: true };
-    expect(toKeyCombination(event)).toEqual(combination("KeyJ", { shiftKey: true }));
-  });
-});
-
 describe("findSeekBinding", () => {
   it("tells Key Combinations apart by their exact modifiers", () => {
     expect(findSeekBinding(DEFAULT_BINDINGS, combination("ArrowLeft"))?.offset.seconds).toBe(5);
@@ -56,21 +47,6 @@ describe("findSeekBinding", () => {
     expect(
       findSeekBinding(DEFAULT_BINDINGS, combination("ArrowLeft", { altKey: true })),
     ).toBeUndefined();
-  });
-});
-
-describe("formatCombination", () => {
-  it("labels modifiers and keys", () => {
-    expect(formatCombination(combination("ArrowRight", { shiftKey: true }))).toEqual([
-      "Shift",
-      "→",
-    ]);
-    expect(formatCombination(combination("KeyJ", { ctrlKey: true, metaKey: true }))).toEqual([
-      "Ctrl",
-      "Meta",
-      "J",
-    ]);
-    expect(formatCombination(combination("Digit5"))).toEqual(["5"]);
   });
 });
 

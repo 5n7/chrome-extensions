@@ -1,10 +1,6 @@
-import { storage } from "#imports";
+import { combination, isSameCombination, type KeyCombination } from "@repo/wxt-kit/keyboard";
 
-/** Matched by physical key (`code`), so Shift or an IME never changes which key it is. */
-export type KeyCombination = Pick<
-  KeyboardEvent,
-  "altKey" | "code" | "ctrlKey" | "metaKey" | "shiftKey"
->;
+import { storage } from "#imports";
 
 export interface SeekOffset {
   direction: "backward" | "forward";
@@ -18,28 +14,6 @@ export interface SeekBinding {
 
 export const MIN_SECONDS = 1;
 export const MAX_SECONDS = 3600;
-
-const MODIFIER_CODES = new Set([
-  "AltLeft",
-  "AltRight",
-  "ControlLeft",
-  "ControlRight",
-  "MetaLeft",
-  "MetaRight",
-  "ShiftLeft",
-  "ShiftRight",
-]);
-
-const KEY_LABELS: Record<string, string> = {
-  ArrowDown: "↓",
-  ArrowLeft: "←",
-  ArrowRight: "→",
-  ArrowUp: "↑",
-};
-
-export function combination(code: string, modifiers: Partial<KeyCombination> = {}): KeyCombination {
-  return { altKey: false, code, ctrlKey: false, metaKey: false, shiftKey: false, ...modifiers };
-}
 
 function binding(
   combo: KeyCombination,
@@ -65,29 +39,6 @@ export const seekBindings = storage.defineItem<SeekBinding[]>("sync:seekBindings
   fallback: DEFAULT_BINDINGS,
 });
 
-export function toKeyCombination(event: KeyCombination): KeyCombination {
-  return combination(event.code, {
-    altKey: event.altKey,
-    ctrlKey: event.ctrlKey,
-    metaKey: event.metaKey,
-    shiftKey: event.shiftKey,
-  });
-}
-
-export function isModifierKey(event: Pick<KeyboardEvent, "code">): boolean {
-  return MODIFIER_CODES.has(event.code);
-}
-
-function isSameCombination(a: KeyCombination, b: KeyCombination): boolean {
-  return (
-    a.code === b.code &&
-    a.altKey === b.altKey &&
-    a.ctrlKey === b.ctrlKey &&
-    a.metaKey === b.metaKey &&
-    a.shiftKey === b.shiftKey
-  );
-}
-
 export function findSeekBinding(
   bindings: readonly SeekBinding[],
   event: KeyCombination,
@@ -97,20 +48,6 @@ export function findSeekBinding(
 
 export function isValidSeconds(seconds: number): boolean {
   return Number.isInteger(seconds) && seconds >= MIN_SECONDS && seconds <= MAX_SECONDS;
-}
-
-function formatKey(code: string): string {
-  return KEY_LABELS[code] ?? code.replace(/^(Key|Digit)/, "");
-}
-
-export function formatCombination(combo: KeyCombination): string[] {
-  return [
-    combo.ctrlKey && "Ctrl",
-    combo.altKey && "Alt",
-    combo.shiftKey && "Shift",
-    combo.metaKey && "Meta",
-    formatKey(combo.code),
-  ].filter((part) => typeof part === "string");
 }
 
 export function formatOffset(offset: SeekOffset): string {

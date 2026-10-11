@@ -1,23 +1,19 @@
 import { cn } from "@repo/ui/lib/utils";
-import { Fragment, useEffect, useEffectEvent, useState } from "react";
-
 import {
   formatCombination,
-  isModifierKey,
+  isRecordableKey,
   isSameCombination,
   toKeyCombination,
   type KeyCombination,
-  type Shortcuts,
-} from "@/utils/shortcuts";
+} from "@repo/wxt-kit/keyboard";
+import { Fragment, useEffect, useEffectEvent, useState } from "react";
+
+import type { Shortcuts } from "@/utils/shortcuts";
 
 const ACTIONS: { key: keyof Shortcuts; label: string }[] = [
   { key: "speedDown", label: "Speed down" },
   { key: "speedUp", label: "Speed up" },
 ];
-
-// Keys recording waits past, alongside lone modifiers: Tab so the keyboard can still leave, and
-// codes some virtual keyboards send instead of a real key.
-const IGNORED_CODES = new Set(["", "CapsLock", "Tab", "Unidentified"]);
 
 function comboLabel(combo: KeyCombination): string {
   return formatCombination(combo).join(" + ");
@@ -35,7 +31,7 @@ export function ShortcutsCard({
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (!recording || event.repeat) return;
-    if (isModifierKey(event) || IGNORED_CODES.has(event.code)) return;
+    if (!isRecordableKey(event)) return;
     event.preventDefault();
     event.stopPropagation();
     setRecording(undefined);

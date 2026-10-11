@@ -3,18 +3,6 @@ import type { SeekOffset } from "./seek-bindings";
 // VODs (including highlights and uploads) live at `/videos/<id>`, clips at `/<channel>/clip/<slug>`.
 const SEEKABLE_PATH = /^\/(?:videos\/\d+|[^/]+\/clip\/[^/]+)\/?$/;
 
-// Inputs that ignore arrow and letter keys, so a Seek Binding may take them over.
-// Text fields, sliders such as the volume control, and radio groups keep their keys.
-const KEYLESS_INPUT_TYPES = new Set([
-  "button",
-  "checkbox",
-  "color",
-  "file",
-  "image",
-  "reset",
-  "submit",
-]);
-
 export function isSeekablePath(pathname: string): boolean {
   return SEEKABLE_PATH.test(pathname);
 }
@@ -31,16 +19,6 @@ export function findPlayerVideo(): HTMLVideoElement | undefined {
     }
   }
   return largest;
-}
-
-/** Whether the key belongs to the focused control or an IME composition rather than the player. */
-export function ownsKeyboard(event: KeyboardEvent): boolean {
-  if (event.isComposing || event.key === "Process") return true;
-  const target = event.composedPath()[0];
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
-  return target instanceof HTMLInputElement && !KEYLESS_INPUT_TYPES.has(target.type);
 }
 
 /** Returns the new playback position, clamped inside the video. */

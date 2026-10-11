@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
+import { combination } from "@repo/wxt-kit/keyboard";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { combination, DEFAULT_BINDINGS, seekBindings } from "@/utils/seek-bindings";
+import { DEFAULT_BINDINGS, seekBindings } from "@/utils/seek-bindings";
 
 import { App } from "./App";
 
@@ -98,6 +99,22 @@ describe("recording", () => {
     expect((await keyDown(elsewhere, { code: "KeyK", key: "k" })).defaultPrevented).toBe(false);
     expect(await seekBindings.getValue()).toEqual(DEFAULT_BINDINGS);
     expect(add.textContent).toBe("Add a key");
+  });
+});
+
+describe("binding rows", () => {
+  it("highlights only the pressed Key Combination, though 5 and numpad 5 read alike", async () => {
+    await act(() =>
+      seekBindings.setValue([
+        { combination: combination("Digit5"), offset: { direction: "backward", seconds: 5 } },
+        { combination: combination("Numpad5"), offset: { direction: "forward", seconds: 5 } },
+      ]),
+    );
+    await keyDown(document.body, { code: "Numpad5", key: "5" });
+    const pressed = [...container.querySelectorAll("li")].map((row) =>
+      row.querySelector("kbd")?.classList.contains("text-white"),
+    );
+    expect(pressed).toEqual([false, true]);
   });
 });
 

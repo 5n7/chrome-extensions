@@ -1,6 +1,8 @@
 import { ErrorNote } from "@repo/ui/components/error-note";
 import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { cn } from "@repo/ui/lib/utils";
+import { follow } from "@repo/wxt-kit/lifecycle";
+import { describeSaveError } from "@repo/wxt-kit/settings";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import iconUrl from "@/assets/icon.svg";
@@ -55,10 +57,7 @@ export function App() {
   const [error, setError] = useState<string>();
   const press = useRef<Press>("none");
 
-  useEffect(() => {
-    void guard.getValue().then(setOn);
-    return guard.watch((next) => setOn(next));
-  }, []);
+  useEffect(() => follow(guard, setOn).stop, []);
 
   useEffect(() => {
     if (!confirming) return;
@@ -72,9 +71,8 @@ export function App() {
     setError(undefined);
     try {
       await guard.setValue(next);
-    } catch {
-      // storage.sync rejects writes past its quota or rate limits.
-      setError("Couldn't save. Try again shortly.");
+    } catch (error) {
+      setError(describeSaveError(error));
       setOn(await guard.getValue());
     }
   }

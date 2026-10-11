@@ -1,11 +1,14 @@
+import { interceptKeys } from "@repo/wxt-kit/keyboard";
+import { onInvalidatedWhileAlive } from "@repo/wxt-kit/lifecycle";
+
 import { browser, defineContentScript, type Browser } from "#imports";
 import { POPUP_PORT, type PageState } from "@/utils/page-state";
 import { readPlayer, type PlayerDetails, type PlayerVideo } from "@/utils/player-bridge";
 import {
+  followSettings,
   getSettings,
   INITIAL_SETTINGS,
   rememberChannelName,
-  watchSettings,
   type Settings,
 } from "@/utils/settings";
 import { findDirection } from "@/utils/shortcuts";
@@ -27,7 +30,6 @@ import {
   isAdShowing,
   isWatchContext,
   NAVIGATION_EVENTS,
-  ownsKeyboard,
   readHandle,
   YOUTUBE_ORIGIN,
 } from "@/utils/youtube";
@@ -63,8 +65,6 @@ export default defineContentScript({
     const indicator = createSpeedIndicator();
     // Each open popup, with the state last posted to it, so an unchanged one is not posted again.
     const ports = new Map<Browser.runtime.Port, string | undefined>();
-    // Codes whose keydown was taken over, so only their keyup is hidden from YouTube too.
-    const intercepted = new Set<string>();
     // Plain timers, cleared on invalidation: `ctx.setTimeout` adds an invalidation listener per
     // call and never removes it, and this script re-arms its poll every second or sooner.
     let lockTimer: ReturnType<typeof setTimeout> | undefined;
@@ -221,18 +221,18 @@ export default defineContentScript({
       adoptSettings(next);
     }
 
-    const unwatchSettings = watchSettings((change) => adoptSettings({ ...settings, ...change }));
+    const following = followSettings(adoptSettings);
     ctx.onInvalidated(() => {
       indicator.remove();
       clearTimeout(lockTimer);
       clearTimeout(pollTimer);
-      // Once the extension reloads, this script is orphaned and any chrome.* call throws; its
-      // listeners can no longer fire, so there is nothing to remove.
-      if (!browser.runtime?.id) return;
-      browser.runtime.onConnect.removeListener(onConnect);
-      unwatchSettings();
     });
-    settings = await getSettings();
+    onInvalidatedWhileAlive(
+      ctx,
+      () => browser.runtime.onConnect.removeListener(onConnect),
+      following.stop,
+    );
+    await following.ready;
 
     for (const type of NAVIGATION_EVENTS) {
       ctx.addEventListener(document, type, sync);
@@ -254,37 +254,19 @@ export default defineContentScript({
       { capture: true },
     );
 
-    // Capture on `window` runs before YouTube's own handlers, so a Speed Shortcut replaces theirs.
-    ctx.addEventListener(
-      window,
-      "keydown",
-      (event) => {
-        const current = controlled();
-        if (!current || ownsKeyboard(event)) return;
-        const direction = findDirection(settings.shortcuts, event);
-        if (!direction) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        intercepted.add(event.code);
+    // A Speed Shortcut replaces YouTube's own.
+    interceptKeys(ctx, (event) => {
+      const current = controlled();
+      if (!current) return;
+      const direction = findDirection(settings.shortcuts, event);
+      if (!direction) return;
+      return () => {
         const before = currentSpeed(current.target, settings);
         current.target = stepTarget(current.target, direction, settings);
         apply(currentSpeed(current.target, settings) === before);
         publish();
-      },
-      { capture: true },
-    );
-    ctx.addEventListener(
-      window,
-      "keyup",
-      (event) => {
-        if (!intercepted.delete(event.code)) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      },
-      { capture: true },
-    );
-    // A keyup never arrives after the window loses focus, or on macOS while Meta is held.
-    ctx.addEventListener(window, "blur", () => intercepted.clear());
+      };
+    });
 
     sync();
   },

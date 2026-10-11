@@ -1,13 +1,14 @@
 import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { cn } from "@repo/ui/lib/utils";
+import { follow } from "@repo/wxt-kit/lifecycle";
+import { describeSaveError } from "@repo/wxt-kit/settings";
 import { useEffect, useState, type ReactNode } from "react";
 
 import iconUrl from "@/assets/icon.svg";
 import { ErrorNote } from "@/components/error-note";
 import {
   channelNamesItem,
-  describeSaveError,
-  getSettings,
+  followSettings,
   saveSetting,
   watchSettings,
   type Settings,
@@ -23,31 +24,38 @@ const SAVED_MS = 1500;
 /** Why the last save of each setting failed, until that setting is saved or changed elsewhere. */
 type SaveErrors = Partial<Record<keyof Settings, string>>;
 
-function without(errors: SaveErrors, keys: readonly string[]): SaveErrors {
-  return Object.fromEntries(Object.entries(errors).filter(([key]) => !keys.includes(key)));
+function without<T>(record: Partial<T>, keys: readonly string[]): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(record).filter(([key]) => !keys.includes(key)),
+  ) as Partial<T>;
 }
 
 export function App() {
-  const [settings, setSettings] = useState<Settings>();
+  const [stored, setStored] = useState<Settings>();
+  // Edits storage has not reported back yet, laid over what it holds, so a failed save stays on
+  // screen.
+  const [unsaved, setUnsaved] = useState<Partial<Settings>>({});
   const [names, setNames] = useState<Record<string, string>>({});
   // The latest save, shown as "Saved" until its timer ends; a new save restarts the timer.
   const [saved, setSaved] = useState<number>();
   const [errors, setErrors] = useState<SaveErrors>({});
   const error = Object.values(errors)[0];
 
-  useEffect(() => {
-    void getSettings().then(setSettings);
-    return watchSettings((change) => {
-      setSettings((current) => current && { ...current, ...change });
-      // What is stored is the truth again, so an earlier failure to save it no longer applies.
-      setErrors((current) => without(current, Object.keys(change)));
-    });
-  }, []);
+  useEffect(() => followSettings(setStored).stop, []);
 
-  useEffect(() => {
-    void channelNamesItem.getValue().then(setNames);
-    return channelNamesItem.watch(setNames);
-  }, []);
+  // What is stored is the truth again, so an edit to it, and an earlier failure to save that edit,
+  // no longer apply.
+  useEffect(
+    () =>
+      watchSettings((change) => {
+        const keys = Object.keys(change);
+        setUnsaved((current) => without(current, keys));
+        setErrors((current) => without(current, keys));
+      }),
+    [],
+  );
+
+  useEffect(() => follow(channelNamesItem, setNames).stop, []);
 
   useEffect(() => {
     if (saved === undefined) return;
@@ -55,21 +63,22 @@ export function App() {
     return () => clearTimeout(timer);
   }, [saved]);
 
-  if (!settings) return null;
+  if (!stored) return null;
+  const settings = { ...stored, ...unsaved };
 
   /**
    * Shows the edit at once, then saves it. A rejected write keeps the edit on screen, so nothing typed
    * is lost; the next edit to that setting saves all of it again.
    */
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
-    setSettings((current) => current && { ...current, [key]: value });
+    setUnsaved((current) => ({ ...current, [key]: value }));
     saveSetting(key, value).then(
       () => {
         setErrors((current) => without(current, [key]));
         setSaved(performance.now());
       },
       (reason: unknown) =>
-        setErrors((current) => ({ ...current, [key]: describeSaveError(reason) })),
+        setErrors((current) => ({ ...current, [key]: describeSaveError(reason, "rules") })),
     );
   }
 

@@ -85,25 +85,3 @@ export function readHandle(
   const href = owner?.querySelector<HTMLAnchorElement>('a[href^="/@"]')?.getAttribute("href");
   return href ? normalizeHandle(href.slice(1).split(/[/?#]/)[0] ?? "") : undefined;
 }
-
-// Inputs that ignore letter keys, so a Speed Shortcut may take them over.
-// Text fields, sliders such as the volume control, and radio groups keep their keys.
-const KEYLESS_INPUT_TYPES = new Set([
-  "button",
-  "checkbox",
-  "color",
-  "file",
-  "image",
-  "reset",
-  "submit",
-]);
-
-/** Whether the key belongs to the focused control or an IME composition rather than the player. */
-export function ownsKeyboard(event: KeyboardEvent): boolean {
-  if (event.isComposing || event.key === "Process") return true;
-  const target = event.composedPath()[0];
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.isContentEditable) return true;
-  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return true;
-  return target instanceof HTMLInputElement && !KEYLESS_INPUT_TYPES.has(target.type);
-}

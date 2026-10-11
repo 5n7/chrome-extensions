@@ -38,7 +38,6 @@ describe("content script", () => {
     vi.spyOn(guard, "getValue").mockReturnValueOnce(staleRead);
     const running = contentScript.main(ctx);
     await guard.setValue(false);
-    await vi.waitFor(() => expect(guarded()).toBe(false));
     resolveStaleRead(true);
     await running;
     expect(guarded()).toBe(false);

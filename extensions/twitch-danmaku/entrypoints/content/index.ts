@@ -1,8 +1,10 @@
-import { browser, defineContentScript } from "#imports";
+import { onInvalidatedWhileAlive } from "@repo/wxt-kit/lifecycle";
+
+import { defineContentScript } from "#imports";
 import { canKeep } from "@/utils/attach";
 import { ensurePlayerButton, removePlayerButton } from "@/utils/player-button";
 import { startSession, type Session, type SessionTarget } from "@/utils/session";
-import { getSettings, saveSetting, watchSettings, type Settings } from "@/utils/settings";
+import { followSettings, saveSetting, type Settings } from "@/utils/settings";
 import { findButtonSlot, findChatList, findPlayer } from "@/utils/twitch-dom";
 import { pageKey, parseWatchPage, type WatchPage } from "@/utils/watch-page";
 
@@ -46,27 +48,16 @@ export default defineContentScript({
       session?.destroy();
       removePlayerButton(document);
     });
-    let pending: Partial<Settings> | undefined = {};
-    const unwatchSettings = watchSettings((change) => {
-      if (pending) {
-        pending = { ...pending, ...change };
-        return;
-      }
-      settings = { ...settings, ...change };
+    const following = followSettings((next) => {
+      settings = next;
       session?.configure(settings);
       reconcile();
     });
-    ctx.onInvalidated(() => {
-      // Once the extension reloads, this script is orphaned and any storage call throws; its
-      // listeners can no longer fire, so there is nothing to remove.
-      if (browser.runtime?.id) unwatchSettings();
-    });
-    settings = { ...(await getSettings()), ...pending };
-    pending = undefined;
+    onInvalidatedWhileAlive(ctx, following.stop);
+    await following.ready;
 
     ctx.addEventListener(window, "wxt:locationchange", reconcile);
     ctx.addEventListener(document, "fullscreenchange", reconcile);
     ctx.setInterval(reconcile, HEARTBEAT_MS);
-    reconcile();
   },
 });

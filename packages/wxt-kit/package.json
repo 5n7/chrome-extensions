@@ -1,0 +1,25 @@
+{
+  "name": "@repo/wxt-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What every content script and popup repeats on top of WXT: key takeover, the orphaned-script guard, and per-item sync settings.",
+  "type": "module",
+  "exports": {
+    "./keyboard": "./src/keyboard.ts",
+    "./lifecycle": "./src/lifecycle.ts",
+    "./settings": "./src/settings.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/tsconfig": "workspace:*",
+    "happy-dom": "^20.14.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "wxt": "^0.21.4"
+  },
+  "peerDependencies": {
+    "wxt": "^0.21.4"
+  }
+}

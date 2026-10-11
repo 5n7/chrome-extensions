@@ -3,14 +3,7 @@ import { fakeBrowser } from "wxt/testing/fake-browser";
 
 import { browser } from "#imports";
 
-import {
-  DEFAULT_SETTINGS,
-  getSettings,
-  resetSettings,
-  saveSetting,
-  watchSettings,
-  type Settings,
-} from "./settings";
+import { DEFAULT_SETTINGS, getSettings, resetSettings, saveSetting } from "./settings";
 
 describe("settings", () => {
   beforeEach(() => fakeBrowser.reset());
@@ -42,14 +35,6 @@ describe("settings", () => {
     await browser.storage.sync.set({ area: 7, crossingTime: 99, laneCount: 35.6 });
     const settings = await getSettings();
     expect([settings.area, settings.crossingTime, settings.laneCount]).toEqual([30, 16, 36]);
-  });
-
-  it("reports only the setting that changed", async () => {
-    const changes: Partial<Settings>[] = [];
-    const unwatch = watchSettings((change) => changes.push(change));
-    await saveSetting("laneCount", 12);
-    unwatch();
-    expect(changes).toEqual([{ laneCount: 12 }]);
   });
 
   it("keeps each setting under its own sync storage key", async () => {

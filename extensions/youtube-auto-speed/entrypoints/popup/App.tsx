@@ -1,19 +1,14 @@
 import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { cn } from "@repo/ui/lib/utils";
+import { describeSaveError } from "@repo/wxt-kit/settings";
 import { useEffect, useRef, useState } from "react";
 
 import { browser, type Browser } from "#imports";
 import iconUrl from "@/assets/icon.svg";
 import { ErrorNote } from "@/components/error-note";
 import { POPUP_PORT, type PageState, type PickedMessage } from "@/utils/page-state";
-import {
-  findChannelRule,
-  newRuleId,
-  readChannelRules,
-  sameHandle,
-  type ChannelRule,
-} from "@/utils/rules";
-import { channelRulesItem, describeSaveError, saveSetting } from "@/utils/settings";
+import { findChannelRule, newRuleId, sameHandle, type ChannelRule } from "@/utils/rules";
+import { followSettings, getSettings, saveSetting } from "@/utils/settings";
 import { formatSpeed, SPEEDS, type Speed } from "@/utils/speed";
 import type { SpeedSource } from "@/utils/target";
 import { YOUTUBE_ORIGIN } from "@/utils/youtube";
@@ -72,14 +67,11 @@ function useTabState(): [PopupState, () => void] {
 export function App() {
   const [state, notifyPicked] = useTabState();
   // Undefined until read, so nothing is saved over rules this popup has not seen.
-  const [channelRules, setChannelRules] = useState<ChannelRule[]>();
+  const [channelRules, setChannelRules] = useState<readonly ChannelRule[]>();
   const [error, setError] = useState<string>();
   const [announcement, setAnnouncement] = useState("");
 
-  useEffect(() => {
-    void channelRulesItem.getValue().then((stored) => setChannelRules(readChannelRules(stored)));
-    return channelRulesItem.watch((stored) => setChannelRules(readChannelRules(stored)));
-  }, []);
+  useEffect(() => followSettings(({ channelRules }) => setChannelRules(channelRules)).stop, []);
 
   const rule =
     state.kind === "ready" && channelRules
@@ -87,7 +79,7 @@ export function App() {
       : undefined;
 
   /** Resolves to whether the write went through. */
-  async function save(next: ChannelRule[], done: string): Promise<boolean> {
+  async function save(next: readonly ChannelRule[], done: string): Promise<boolean> {
     setChannelRules(next);
     setError(undefined);
     try {
@@ -95,13 +87,13 @@ export function App() {
       setAnnouncement(done);
       return true;
     } catch (error) {
-      setError(describeSaveError(error));
-      setChannelRules(readChannelRules(await channelRulesItem.getValue()));
+      setError(describeSaveError(error, "rules"));
+      setChannelRules((await getSettings()).channelRules);
       return false;
     }
   }
 
-  function pick(rules: ChannelRule[], handle: string, speed: Speed) {
+  function pick(rules: readonly ChannelRule[], handle: string, speed: Speed) {
     const existing = findChannelRule(rules, handle);
     const next = existing
       ? rules.with(rules.indexOf(existing), { ...existing, speed })
@@ -111,7 +103,7 @@ export function App() {
     });
   }
 
-  function remove(rules: ChannelRule[], handle: string) {
+  function remove(rules: readonly ChannelRule[], handle: string) {
     void save(
       rules.filter((each) => !sameHandle(each.handle, handle)),
       `Removed the rule for ${handle}.`,
@@ -134,8 +126,8 @@ export function App() {
 
       {state.kind === "none" && (
         <Notice
-          drawing
           detail="Shorts and live streams are left alone."
+          drawing
           title="No video to control on this page."
         />
       )}

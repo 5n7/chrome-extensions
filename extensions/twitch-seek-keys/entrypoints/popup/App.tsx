@@ -1,6 +1,16 @@
 import { ErrorNote } from "@repo/ui/components/error-note";
 import { WobbleFilter } from "@repo/ui/components/wobble-filter";
 import { cn } from "@repo/ui/lib/utils";
+import {
+  combinationId,
+  formatCombination,
+  isRecordableKey,
+  isSameCombination,
+  toKeyCombination,
+  type KeyCombination,
+} from "@repo/wxt-kit/keyboard";
+import { follow } from "@repo/wxt-kit/lifecycle";
+import { describeSaveError } from "@repo/wxt-kit/settings";
 import { ChevronsLeftIcon, ChevronsRightIcon, PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from "react";
 
@@ -10,26 +20,17 @@ import {
   MAX_SECONDS,
   MIN_SECONDS,
   findSeekBinding,
-  formatCombination,
-  isModifierKey,
   isValidSeconds,
   seekBindings,
-  toKeyCombination,
-  type KeyCombination,
   type SeekBinding,
   type SeekOffset,
 } from "@/utils/seek-bindings";
 
 const NEW_BINDING_OFFSET: SeekOffset = { direction: "forward", seconds: 10 };
 
-// Recording waits past these as it does past modifiers: Tab so the keyboard can still leave, Caps
-// Lock because it only toggles case, and codes some virtual keyboards send instead of a real key.
-const IGNORED_CODES = new Set(["", "CapsLock", "Tab", "Unidentified"]);
-
 /** A row that just matched a key press, or was just added. */
 interface Highlight {
-  /** The row's Key Combination as shown, e.g. `Shift+J`. */
-  label: string;
+  combination: KeyCombination;
   kind: "added" | "pressed";
   /** The key event's timestamp, so pressing the same key again replays the wiggle. */
   id: number;
@@ -84,10 +85,7 @@ export function App() {
   const [restored, setRestored] = useState<number>();
   const listRef = useRef<HTMLUListElement>(null);
 
-  useEffect(() => {
-    void seekBindings.getValue().then(setBindings);
-    return seekBindings.watch((next) => setBindings(next));
-  }, []);
+  useEffect(() => follow(seekBindings, setBindings).stop, []);
 
   useEffect(() => {
     if (!highlight) return;
@@ -121,9 +119,8 @@ export function App() {
     try {
       await seekBindings.setValue(next);
       return true;
-    } catch {
-      // storage.sync rejects writes past its quota or rate limits.
-      setError("Couldn't save. Try again shortly.");
+    } catch (error) {
+      setError(describeSaveError(error));
       setBindings(await seekBindings.getValue());
       return false;
     }
@@ -147,15 +144,11 @@ export function App() {
       if (event.target instanceof HTMLInputElement) return;
       const binding = findSeekBinding(bindings, event);
       if (binding) {
-        setHighlight({
-          label: combinationLabel(binding.combination),
-          kind: "pressed",
-          id: event.timeStamp,
-        });
+        setHighlight({ combination: binding.combination, kind: "pressed", id: event.timeStamp });
       }
       return;
     }
-    if (isModifierKey(event) || IGNORED_CODES.has(event.code)) return;
+    if (!isRecordableKey(event)) return;
     event.preventDefault();
     event.stopPropagation();
     setRecording(false);
@@ -166,7 +159,7 @@ export function App() {
       return;
     }
     void save([...bindings, { combination, offset: NEW_BINDING_OFFSET }]);
-    setHighlight({ label: combinationLabel(combination), kind: "added", id: event.timeStamp });
+    setHighlight({ combination, kind: "added", id: event.timeStamp });
   });
 
   useEffect(() => {
@@ -220,19 +213,20 @@ export function App() {
         </div>
       ) : (
         <ul ref={listRef} className="grid gap-2">
-          {bindings.map((binding, index) => {
-            const label = combinationLabel(binding.combination);
-            return (
-              <BindingRow
-                key={label}
-                binding={binding}
-                dimmed={recording}
-                highlight={highlight?.label === label ? highlight : undefined}
-                onChange={(offset) => save(bindings.with(index, { ...binding, offset }))}
-                onRemove={() => save(bindings.toSpliced(index, 1))}
-              />
-            );
-          })}
+          {bindings.map((binding, index) => (
+            <BindingRow
+              key={combinationId(binding.combination)}
+              binding={binding}
+              dimmed={recording}
+              highlight={
+                highlight && isSameCombination(highlight.combination, binding.combination)
+                  ? highlight
+                  : undefined
+              }
+              onChange={(offset) => save(bindings.with(index, { ...binding, offset }))}
+              onRemove={() => save(bindings.toSpliced(index, 1))}
+            />
+          ))}
         </ul>
       )}
       {/* One button for both states, so keyboard focus stays on it while recording. */}

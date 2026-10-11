@@ -30,6 +30,12 @@ function slider(id: string): HTMLInputElement {
   return found;
 }
 
+async function click(name: string) {
+  const found = [...document.querySelectorAll("button")].find((each) => each.textContent === name);
+  if (!found) throw new Error(`no button ${name}`);
+  await act(async () => found.click());
+}
+
 const shown = (id: string) => document.querySelector(`output[for="${id}"]`)?.textContent;
 
 /** Moves the thumb, as a drag or a keyboard step does, firing `input`. */
@@ -90,5 +96,18 @@ describe("sliders", () => {
     await fire(area, new Event("change", { bubbles: true }));
     expect(set).toHaveBeenCalledOnce();
     expect((await getSettings()).area).toBe(50);
+  });
+});
+
+describe("reset", () => {
+  it("names the sync limit that refused it", async () => {
+    vi.spyOn(fakeBrowser.storage.sync, "remove").mockRejectedValueOnce(
+      new Error("MAX_WRITE_OPERATIONS_PER_MINUTE quota exceeded"),
+    );
+    await click("Reset");
+    await click("Reset everything?");
+    expect(document.body.textContent).toContain(
+      "Couldn't save: Chrome limits how often settings sync. Try again later.",
+    );
   });
 });

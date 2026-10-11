@@ -6,6 +6,7 @@ Monorepo of personal Chrome extensions built with WXT, React, and shadcn/ui on B
 
 - `extensions/<name>/` — one WXT project per extension, package name `<name>` (unscoped, so zips are named `<name>-<version>-chrome.zip`).
 - `packages/ui/` — shared UI: the Tailwind theme (`globals.css`), the hand-drawn kit (`hand-drawn.css`, `WobbleFilter`, `ErrorNote`), and any shadcn/ui components added later.
+- `packages/wxt-kit/` — what content scripts and popups repeat on top of WXT: `keyboard` (Key Combination, recording rule, key labels, `interceptKeys`), `lifecycle` (`onInvalidatedWhileAlive`, `follow`), and `settings` (`defineSyncSettings`, `describeSaveError`).
 - `packages/tsconfig/` — strict base config.
 - `CONTEXT-MAP.md` — index of each extension's domain glossary (`extensions/<name>/CONTEXT.md`); use its terms in code and docs.
 
@@ -29,6 +30,7 @@ Templates are deliberately absent until a few extensions exist; model a new one 
 - Add shadcn components from the root with `bun ui add <component>`; they land in `packages/ui/src/components` and are imported as `@repo/ui/components/<component>`.
 - Import WXT APIs explicitly from `#imports` (`browser`, `defineBackground`, `storage`, …); auto-imports are disabled per extension.
 - Persist state with WXT `storage.defineItem` and test it with `fakeBrowser` from `wxt/testing/fake-browser`.
+- Use `@repo/wxt-kit` (depend on it as `workspace:*`) instead of re-writing its traps: a content script takes keys over with `interceptKeys`, removes listeners through `onInvalidatedWhileAlive` (an extension reload orphans the script, so plain cleanup would throw), and reads a stored value with `follow`, which watches first so a change made during the read is never lost; a popup follows the same way and returns `.stop` from its effect. Settings stored as one `sync:<key>` item per key go through `defineSyncSettings`, and every popup shows a failed save with `describeSaveError`. The package imports `wxt/browser` directly, because `#imports` exists only inside a WXT project.
 - React Compiler is enabled, so write plain components and leave memoization to it.
 - Declare dependency versions directly in each `package.json`. Bun `catalog:` stays unused because Dependabot skips catalog entries.
 - Run WXT on Node (`bun run dev`, never `bun --bun`); WXT is unreliable on the Bun runtime.

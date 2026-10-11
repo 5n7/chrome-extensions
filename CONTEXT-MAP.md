@@ -10,4 +10,4 @@
 
 ## Relationships
 
-Each extension is an independent context. Twitch Seek Keys and YouTube Auto Speed define a Key Combination the same way, but neither depends on the other.
+Each extension is an independent context. Twitch Seek Keys and YouTube Auto Speed share one Key Combination, taken from `@repo/wxt-kit`, but neither depends on the other.

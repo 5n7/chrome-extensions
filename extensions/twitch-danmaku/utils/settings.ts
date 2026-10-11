@@ -1,4 +1,4 @@
-import { storage } from "#imports";
+import { defineSyncSettings } from "@repo/wxt-kit/settings";
 
 export interface Settings {
   readonly enabled: boolean;
@@ -40,50 +40,15 @@ function readRanged(key: SliderKey) {
   };
 }
 
-const FIELDS: { [K in keyof Settings]: (stored: unknown) => Settings[K] } = {
+export const {
+  follow: followSettings,
+  get: getSettings,
+  reset: resetSettings,
+  save: saveSetting,
+} = defineSyncSettings<Settings>({
   enabled: (stored) => (typeof stored === "boolean" ? stored : DEFAULT_SETTINGS.enabled),
   area: readRanged("area"),
   laneCount: readRanged("laneCount"),
   opacity: readRanged("opacity"),
   crossingTime: readRanged("crossingTime"),
-};
-
-const ITEMS = {
-  enabled: storage.defineItem<unknown>("sync:enabled"),
-  area: storage.defineItem<unknown>("sync:area"),
-  laneCount: storage.defineItem<unknown>("sync:laneCount"),
-  opacity: storage.defineItem<unknown>("sync:opacity"),
-  crossingTime: storage.defineItem<unknown>("sync:crossingTime"),
-} satisfies Record<keyof Settings, unknown>;
-
-const KEYS = Object.keys(ITEMS) as (keyof Settings)[];
-
-async function read<K extends keyof Settings>(key: K): Promise<Settings[K]> {
-  return FIELDS[key](await ITEMS[key].getValue());
-}
-
-export async function getSettings(): Promise<Settings> {
-  const [enabled, area, laneCount, opacity, crossingTime] = await Promise.all([
-    read("enabled"),
-    read("area"),
-    read("laneCount"),
-    read("opacity"),
-    read("crossingTime"),
-  ]);
-  return { enabled, area, laneCount, opacity, crossingTime };
-}
-
-export function watchSettings(callback: (change: Partial<Settings>) => void): () => void {
-  const unwatchers = KEYS.map((key) =>
-    ITEMS[key].watch((stored) => callback({ [key]: FIELDS[key](stored) })),
-  );
-  return () => unwatchers.forEach((unwatch) => unwatch());
-}
-
-export function saveSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {
-  return ITEMS[key].setValue(value);
-}
-
-export async function resetSettings(): Promise<void> {
-  await Promise.all(KEYS.map((key) => ITEMS[key].removeValue()));
-}
+});

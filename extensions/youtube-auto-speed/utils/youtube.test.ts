@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { PlayerVideo } from "./player-bridge";
-import { findTargetVideoId, ownsKeyboard, readHandle } from "./youtube";
+import { findTargetVideoId, readHandle } from "./youtube";
 
 const video = (overrides: Partial<PlayerVideo> = {}): PlayerVideo => ({
   author: "Daily Lisp Talks",
@@ -97,29 +97,5 @@ describe("readHandle", () => {
     expect(readHandle(video(), undefined)).toBeUndefined();
     renderOwner({ videoId: "previous" });
     expect(readHandle(video(), undefined)).toBeUndefined();
-  });
-});
-
-describe("ownsKeyboard", () => {
-  function press(target: HTMLElement): boolean | undefined {
-    document.body.append(target);
-    let owned: boolean | undefined;
-    target.addEventListener("keydown", (event) => (owned = ownsKeyboard(event)), { once: true });
-    target.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, code: "KeyS" }));
-    target.remove();
-    return owned;
-  }
-
-  it("leaves keys to text fields and editable regions", () => {
-    expect(press(document.createElement("input"))).toBe(true);
-    expect(press(document.createElement("textarea"))).toBe(true);
-    const editable = document.createElement("div");
-    editable.contentEditable = "true";
-    expect(press(editable)).toBe(true);
-  });
-
-  it("takes keys from buttons and the page", () => {
-    expect(press(document.createElement("button"))).toBe(false);
-    expect(press(document.createElement("div"))).toBe(false);
   });
 });
