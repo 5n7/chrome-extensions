@@ -29,6 +29,8 @@ const CONFIRM_MS = 3000;
 
 type Phase = "confirming" | "holding" | "off" | "on";
 
+type Press = "held" | "none" | "pressed";
+
 /** Announced by the live region. */
 const STATUS: Record<Phase, string> = {
   confirming: "Press again to turn the Guard off.",
@@ -51,10 +53,7 @@ export function App() {
   // Set by a click that comes without a press, until a second one confirms or time runs out.
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
-  // Whether a pointer or a hold key went down before the next click.
-  const pressed = useRef(false);
-  // Whether the current press held long enough, so the click that ends it never turns the Guard back on.
-  const held = useRef(false);
+  const press = useRef<Press>("none");
 
   useEffect(() => {
     void guard.getValue().then(setOn);
@@ -78,11 +77,6 @@ export function App() {
       setError("Couldn't save. Try again shortly.");
       setOn(await guard.getValue());
     }
-  }
-
-  function startPress() {
-    pressed.current = true;
-    held.current = false;
   }
 
   if (on === undefined) return null;
@@ -113,16 +107,15 @@ export function App() {
         type="button"
         onBlur={() => setHold(undefined)}
         onClick={() => {
-          const wasPressed = pressed.current;
-          const wasHeld = held.current;
-          pressed.current = false;
-          held.current = false;
+          const last = press.current;
+          press.current = "none";
+          if (last === "held") return;
           if (!on) {
-            if (!wasHeld) void save(true);
+            void save(true);
             return;
           }
           // Screen readers and voice control click without a press and cannot hold, so they confirm instead.
-          if (wasPressed) return;
+          if (last === "pressed") return;
           if (awaitingConfirm) void save(false);
           else setConfirming(true);
         }}
@@ -134,7 +127,7 @@ export function App() {
             event.preventDefault();
             return;
           }
-          startPress();
+          press.current = "pressed";
           if (!on) return;
           // The hold decides instead of Enter's click.
           event.preventDefault();
@@ -143,15 +136,14 @@ export function App() {
         onKeyUp={(event) => {
           if (!HOLD_KEYS.has(event.key)) return;
           setHold(undefined);
-          // A prevented keydown never clicks, so nothing is left to read these.
-          pressed.current = false;
-          held.current = false;
+          // A prevented keydown never clicks, so nothing is left to read the press.
+          press.current = "none";
         }}
         onLostPointerCapture={() => setHold(undefined)}
         onPointerDown={(event) => {
           // Other buttons never click.
           if (event.button !== 0) return;
-          startPress();
+          press.current = "pressed";
           if (!on) return;
           event.currentTarget.setPointerCapture(event.pointerId);
           setHold(holdAt(event.currentTarget, event));
@@ -170,7 +162,7 @@ export function App() {
               } as CSSProperties
             }
             onAnimationEnd={() => {
-              held.current = true;
+              press.current = "held";
               setHold(undefined);
               void save(false);
             }}

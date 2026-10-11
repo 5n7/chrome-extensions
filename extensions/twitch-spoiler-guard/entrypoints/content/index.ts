@@ -15,18 +15,15 @@ export default defineContentScript({
     // Guard until the stored state arrives: unhiding late is harmless, showing early is a spoiler.
     apply(true);
     // Watch before reading so a change made in between is not lost.
-    let changed = false;
-    const unwatch = guard.watch((next) => {
-      changed = true;
-      apply(next);
-    });
+    let changed: boolean | undefined;
+    const unwatch = guard.watch((next) => apply((changed = next)));
     ctx.onInvalidated(() => {
       // Once the extension reloads, this script is orphaned and any storage call throws; its
       // listeners can no longer fire, so there is nothing to remove.
       if (browser.runtime?.id) unwatch();
     });
     const initial = await guard.getValue();
-    if (!changed) apply(initial);
+    apply(changed ?? initial);
     // A page restored from the back/forward cache missed any change made while it was away.
     ctx.addEventListener(window, "pageshow", (event) => {
       if (event.persisted) void guard.getValue().then(apply);
