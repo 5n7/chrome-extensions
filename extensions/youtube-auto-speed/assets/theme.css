@@ -14,7 +14,8 @@ select {
   cursor: pointer;
 }
 
-:is(button, select):focus-visible {
+/* A select shows focus on its pill's red edge instead, as a rule's text field does. */
+button:focus-visible {
   outline: 2px solid var(--color-youtube);
   outline-offset: 3px;
   border-radius: var(--r, 6px);

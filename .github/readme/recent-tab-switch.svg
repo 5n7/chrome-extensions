@@ -19,7 +19,7 @@
   </g>
 </svg>
 <text x="200" y="96" font-size="38" font-weight="700" fill="#18181b">Recent Tab Switch</text>
-<path d="M200 112c38.25 -5 76.5 3 76.5 0s76.5 -4 153 0s38.25 4 76.5 0" fill="none" stroke="#9146ff" stroke-width="4" stroke-linecap="round"/>
+<path d="M200 112c38.25 -5 76.5 3 76.5 0s76.5 -4 153 0s38.25 4 76.5 0" fill="none" stroke="#ff8a3d" stroke-width="4" stroke-linecap="round"/>
 <text x="200" y="146" font-size="22" fill="#18181b" opacity=".75">Makes Ctrl+Tab switch to your most</text><text x="200" y="176" font-size="22" fill="#18181b" opacity=".75">recently used tabs, the way Arc and</text><text x="200" y="206" font-size="22" fill="#18181b" opacity=".75">Dia do.</text>
 <svg x="596" y="31" width="260" height="170" viewBox="0 0 260 170">
   <!-- README card art: Ctrl+Tab throws a boomerang from the current tab back to the most recently used one, past the tabs between. -->

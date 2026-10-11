@@ -3,16 +3,15 @@ import { mkdir, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 // Draws the README's banner and one card per extension in the icons' hand-drawn world (ink on paper,
-// Kalam lettering, a purple accent), then lists the cards in README.md. The SVGs embed Kalam, since
-// GitHub shows them as images that load no outside fonts, and fill their own paper, so they read
-// the same on light and dark themes.
+// Kalam lettering, each card underlined in its extension's accent), then lists the cards in
+// README.md. The SVGs embed Kalam, since GitHub shows them as images that load no outside fonts, and
+// fill their own paper, so they read the same on light and dark themes.
 
 const root = join(import.meta.dir, "..");
 const outDir = join(root, ".github", "readme");
 
 const INK = "#18181b";
 const PAPER = "#fffdf5";
-const PURPLE = "#9146ff";
 const WIDTH = 880;
 const SUBTITLE = "Personal Chrome extensions, drawn by hand.";
 // A card's text fits between its icon and its doodle; past these, shorten the name or description.
@@ -27,6 +26,8 @@ interface Extension {
   name: string;
   title: string;
   description: string;
+  /** The stroke of its popup's `title-squiggle`, which its card's squiggle repeats. */
+  accent: string;
   icon: string;
   doodle: string | undefined;
 }
@@ -76,10 +77,10 @@ function wrap(text: string, width: number): string[] {
   return lines;
 }
 
-/** A purple squiggle under a title of roughly `width` px, like the popups' `title-squiggle`. */
-function squiggle(x: number, y: number, width: number): string {
+/** A squiggle under a title of roughly `width` px, like the popups' `title-squiggle`. */
+function squiggle(x: number, y: number, width: number, color: string): string {
   const step = width / 4;
-  return `<path d="M${x} ${y}c${step / 2} -5 ${step} 3 ${step} 0s${step} -4 ${step * 2} 0s${step / 2} 4 ${step} 0" fill="none" stroke="${PURPLE}" stroke-width="4" stroke-linecap="round"/>`;
+  return `<path d="M${x} ${y}c${step / 2} -5 ${step} 3 ${step} 0s${step} -4 ${step * 2} 0s${step / 2} 4 ${step} 0" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/>`;
 }
 
 function frame(height: number, body: string, label: string): string {
@@ -118,7 +119,7 @@ function card(extension: Extension): string {
     232,
     `${inline(extension.icon, `${extension.name}-icon`, 44, 52, [128, 128])}
 <text x="200" y="96" font-size="38" font-weight="700" fill="${INK}">${escape(extension.title)}</text>
-${squiggle(200, 112, extension.title.length * 18)}
+${squiggle(200, 112, extension.title.length * 18, extension.accent)}
 ${tagline}
 ${doodle}`,
     `${extension.title}: ${extension.description}`,
@@ -145,7 +146,7 @@ function banner(extensions: Extension[]): string {
   return frame(
     250,
     `<text x="48" y="112" font-size="56" font-weight="700" fill="${INK}">chrome-extensions</text>
-${squiggle(48, 130, 470)}
+${squiggle(48, 130, 470, INK)}
 <text x="50" y="170" font-size="24" fill="${INK}" opacity=".75">${SUBTITLE}</text>
 <text x="50" y="204" font-size="18" fill="${INK}" opacity=".55">WXT · React · Tailwind CSS · shadcn/ui · Bun</text>
 ${shelf}
@@ -155,6 +156,20 @@ ${shelf}
 </g>
 <text x="${next + 64 * unit}" y="${top + 78 * unit}" font-size="${40 * unit}" font-weight="700" fill="${INK}" text-anchor="middle" opacity=".45">?</text>`,
     `chrome-extensions: ${SUBTITLE}`,
+  );
+}
+
+async function accentOf(dir: string, name: string): Promise<string> {
+  for await (const path of new Bun.Glob("{assets,entrypoints}/**/*.css").scan(dir)) {
+    const css = await Bun.file(join(dir, path)).text();
+    const utility = /@utility title-squiggle\s*\{([^}]*)\}/.exec(css)?.[1];
+    if (utility === undefined) continue;
+    const stroke = /stroke='(?:%23|#)([\da-f]{3,8})'/i.exec(utility)?.[1];
+    if (!stroke) throw new Error(`${name}'s title-squiggle in ${path} needs a hex stroke colour.`);
+    return `#${stroke}`;
+  }
+  throw new Error(
+    `${name} needs a title-squiggle utility in a CSS file under assets/ or entrypoints/.`,
   );
 }
 
@@ -182,6 +197,7 @@ for (const entry of await readdir(extensionsDir, { withFileTypes: true })) {
   if (!existsSync(iconPath)) throw new Error(`${name} needs a 128 px icon at ${iconPath}.`);
   const doodlePath = join(dir, "assets", "readme-doodle.svg");
   extensions.push({
+    accent: await accentOf(dir, name),
     description,
     doodle: existsSync(doodlePath) ? await Bun.file(doodlePath).text() : undefined,
     icon: await Bun.file(iconPath).text(),

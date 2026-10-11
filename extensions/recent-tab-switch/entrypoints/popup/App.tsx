@@ -85,7 +85,7 @@ export function App() {
       </header>
       <ul className="wobbly grid gap-2.5 px-3.5 py-3 [--fill:#fff] [--r:14px]">
         {commands.map(({ description, name, shortcut }) => (
-          <li className="flex items-center justify-between gap-3" key={name}>
+          <li key={name} className="flex items-center justify-between gap-3">
             <span className="text-[15px] leading-tight">{description}</span>
             <Shortcut shortcut={shortcut} />
           </li>
@@ -114,8 +114,8 @@ function Shortcut({ shortcut }: { shortcut: string }) {
     <span className="flex shrink-0 gap-1">
       {keysOf(shortcut).map((key, index) => (
         <kbd
-          className="wobbly min-w-7 px-1.5 pt-0.5 text-center text-sm leading-6 font-bold [--fill:var(--color-peach)] [--r:7px]"
           key={`${index}-${key}`}
+          className="wobbly font-hand min-w-7 px-1.5 pt-0.5 text-center text-sm leading-6 font-bold [--fill:var(--color-peach)] [--r:7px]"
         >
           {key}
         </kbd>

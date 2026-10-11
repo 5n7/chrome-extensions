@@ -132,7 +132,7 @@ export function App() {
           />
         </Step>
         <NoMatch />
-        <Step floor description="Every other video." number={3} title="Default Speed">
+        <Step description="Every other video." floor number={3} title="Default Speed">
           <fieldset className="flex flex-wrap gap-2">
             <legend className="sr-only">Default Speed</legend>
             {SPEEDS.map((speed) => (
@@ -145,7 +145,7 @@ export function App() {
                   value={speed}
                   onChange={() => update("defaultSpeed", speed)}
                 />
-                <span className="wobbly font-hand peer-focus-visible:outline-youtube grid h-10 w-[74px] place-items-center text-lg leading-none font-bold [--fill:#fff] [--r:999px] peer-checked:text-white peer-checked:[--fill:var(--color-youtube)] peer-focus-visible:rounded-full peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3">
+                <span className="wobbly font-hand peer-focus-visible:outline-youtube grid h-10 w-[74px] cursor-pointer place-items-center text-lg leading-none font-bold [--fill:#fff] [--r:999px] peer-checked:text-white peer-checked:[--fill:var(--color-youtube)] peer-focus-visible:rounded-full peer-focus-visible:outline-2 peer-focus-visible:outline-offset-3">
                   {formatSpeed(speed)}
                 </span>
               </label>

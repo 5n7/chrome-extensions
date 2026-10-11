@@ -4,7 +4,7 @@
 <defs><filter id="wobble" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter></defs>
 <rect x="10" y="10" width="860" height="230" rx="24" fill="#fffdf5" stroke="#18181b" stroke-width="3" filter="url(#wobble)"/>
 <text x="48" y="112" font-size="56" font-weight="700" fill="#18181b">chrome-extensions</text>
-<path d="M48 130c58.75 -5 117.5 3 117.5 0s117.5 -4 235 0s58.75 4 117.5 0" fill="none" stroke="#9146ff" stroke-width="4" stroke-linecap="round"/>
+<path d="M48 130c58.75 -5 117.5 3 117.5 0s117.5 -4 235 0s58.75 4 117.5 0" fill="none" stroke="#18181b" stroke-width="4" stroke-linecap="round"/>
 <text x="50" y="170" font-size="24" fill="#18181b" opacity=".75">Personal Chrome extensions, drawn by hand.</text>
 <text x="50" y="204" font-size="18" fill="#18181b" opacity=".55">WXT · React · Tailwind CSS · shadcn/ui · Bun</text>
 <g transform="rotate(-4 605.6666666666666 180.33333333333331)"><svg x="590" y="164.66666666666666" width="31.333333333333336" height="31.333333333333336" viewBox="0 0 128 128">
