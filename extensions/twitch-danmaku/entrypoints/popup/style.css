@@ -1,0 +1,227 @@
+@import "@repo/ui/globals.css";
+@source "..";
+
+/* Declared here rather than via @fontsource's CSS, which also ships a woff fallback Chrome never needs. */
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("@fontsource/kalam/files/kalam-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Kalam";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("@fontsource/kalam/files/kalam-latin-700-normal.woff2") format("woff2");
+}
+
+@theme {
+  --color-paper: #fffdf5;
+  --color-ink: #18181b;
+  --color-twitch: #9146ff;
+  --color-lilac: #ece2ff;
+  --color-rust: #c42b31;
+  --font-hand: "Kalam", "Comic Sans MS", cursive;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-lilac);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-twitch);
+  outline-offset: 3px;
+  border-radius: var(--r, 6px);
+}
+
+@utility wobbly {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border: 2.5px solid var(--color-ink);
+    border-radius: var(--r, 10px);
+    background: var(--fill, transparent);
+    filter: url(#wobble);
+  }
+}
+
+@utility title-squiggle {
+  padding-bottom: 7px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5C20 2 34 7 52 4S88 2 118 5' fill='none' stroke='%239146ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
+    bottom / 100% 7px no-repeat;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: none;
+  padding: 6px 4px;
+}
+
+.switch .track {
+  width: 46px;
+  height: 26px;
+  --r: 999px;
+  --fill: var(--color-lilac);
+}
+
+.switch .knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  transition: transform 0.15s;
+}
+
+.switch[aria-pressed="true"] .track {
+  --fill: var(--color-twitch);
+}
+
+.switch[aria-pressed="true"] .knob {
+  transform: translateX(20px);
+  background: var(--color-paper);
+  box-shadow: 0 0 0 2px var(--color-ink);
+}
+
+.mini {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  isolation: isolate;
+  background: #0b0b10;
+}
+
+.mini::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2.5px solid var(--color-ink);
+  border-radius: 10px;
+  filter: url(#wobble);
+  pointer-events: none;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 40% at 72% 30%, rgba(255, 196, 120, 0.55), transparent 70%),
+    linear-gradient(180deg, #2b2350 0%, #5a3f78 46%, #c27a6a 62%, #2a3b2f 62.5%, #1d2a22 100%);
+}
+
+.scene::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  bottom: 14%;
+  width: 9%;
+  aspect-ratio: 1 / 1.5;
+  background: #ffcf5a;
+  border-radius: 40% 40% 12% 12%;
+  box-shadow: 0 0 0 4px #1a1a1a inset;
+}
+
+.scene::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  height: 22%;
+  background: repeating-linear-gradient(90deg, #2f4a37 0 40px, #284032 40px 80px);
+  opacity: 0.9;
+}
+
+.mini[data-off] .scene {
+  filter: grayscale(1) brightness(0.6);
+}
+
+.areaband {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.45);
+  background: rgba(145, 70, 255, 0.12);
+}
+
+.lane-guide {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px dotted rgba(255, 255, 255, 0.25);
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 22px;
+  margin: 2px 0 0;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-lilac);
+  border: 2px solid var(--color-ink);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--color-twitch);
+  border: 2.5px solid var(--color-ink);
+}
+
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--color-twitch);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.pfoot {
+  border-top: 2px dashed rgba(24, 24, 27, 0.15);
+}
+
+.pfoot button {
+  text-decoration: underline wavy rgba(24, 24, 27, 0.4);
+  text-underline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch .knob {
+    transition: none;
+  }
+}

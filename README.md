@@ -10,6 +10,8 @@ Personal Chrome extensions, built with [WXT](https://wxt.dev), React, Tailwind C
 
 <a href="extensions/recent-tab-switch"><img src=".github/readme/recent-tab-switch.svg" alt="Recent Tab Switch: Makes Ctrl+Tab switch to your most recently used tabs, the way Arc and Dia do." width="880"></a>
 
+<a href="extensions/twitch-danmaku"><img src=".github/readme/twitch-danmaku.svg" alt="Twitch Danmaku: Scrolls Twitch chat across the player, Niconico-style, live and on VODs." width="880"></a>
+
 <a href="extensions/twitch-seek-keys"><img src=".github/readme/twitch-seek-keys.svg" alt="Twitch Seek Keys: Custom keyboard seek amounts for Twitch VODs and clips." width="880"></a>
 
 <a href="extensions/twitch-spoiler-guard"><img src=".github/readme/twitch-spoiler-guard.svg" alt="Twitch Spoiler Guard: Hides the seek bar and total time on Twitch VODs, so their length never spoils the ending." width="880"></a>
