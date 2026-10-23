@@ -15,13 +15,18 @@ import {
 import type { ChannelRule } from "@/utils/rules";
 import { channelName, channelNamesItem, saveSetting } from "@/utils/settings";
 import type { Speed } from "@/utils/speed";
+import { PLAYERS, type PlayerKind } from "@/utils/youtube";
 
 import contentScript from "./index";
 
 const shown = vi.hoisted((): { speed: number; nudge: boolean }[] => []);
+const shownIn = vi.hoisted((): PlayerKind[] => []);
 vi.mock("@/utils/speed-indicator", () => ({
   createSpeedIndicator: () => ({
-    show: (_player: HTMLElement, speed: number, nudge = false) => shown.push({ nudge, speed }),
+    show(kind: PlayerKind, speed: number, nudge = false) {
+      shown.push({ nudge, speed });
+      shownIn.push(kind);
+    },
     hide() {},
     remove() {},
   }),
@@ -82,35 +87,47 @@ const LISP: PlayerReport = { details: LISP_DETAILS, video: LISP_VIDEO };
 const LISP_RULE: ChannelRule = { handle: "@dailylisp", id: "c", speed: 2 };
 
 let report: PlayerReport = {};
-const answer = () => {
-  document.dispatchEvent(new CustomEvent(RESPONSE_EVENT, { detail: JSON.stringify(report) }));
+let loadedIn: PlayerKind = "watch";
+const answer = (event: Event) => {
+  const reported = (event as CustomEvent<unknown>).detail === loadedIn ? report : {};
+  document.dispatchEvent(new CustomEvent(RESPONSE_EVENT, { detail: JSON.stringify(reported) }));
 };
 
 let ctx: ContentScriptContext;
 
-async function start(next: PlayerReport, { ad = false } = {}) {
-  history.replaceState(null, "", "/watch?v=abc");
-  document.body.innerHTML = `<div id="movie_player" class="${ad ? "ad-showing" : ""}"><video class="html5-main-video"></video></div>`;
+const PAGES: Record<PlayerKind, string> = { shorts: "/shorts/abc", watch: "/watch?v=abc" };
+
+async function start(
+  next: PlayerReport,
+  { ad = false, player = "watch" }: { ad?: boolean; player?: PlayerKind } = {},
+) {
+  history.replaceState(null, "", PAGES[player]);
+  document.body.innerHTML = `
+    <div id="movie_player"><video class="html5-main-video"></video></div>
+    <div id="shorts-player"><video class="html5-main-video"></video></div>`;
+  if (ad) playerElement(player).classList.add("ad-showing");
   report = next;
+  loadedIn = player;
   ctx = new ContentScriptContext("content");
   await contentScript.main(ctx);
 }
 
-function player(): HTMLElement {
-  const element = document.querySelector<HTMLElement>("#movie_player");
+function playerElement(kind: PlayerKind = "watch"): HTMLElement {
+  const element = document.querySelector<HTMLElement>(PLAYERS[kind].selector);
   if (!element) throw new Error("no player");
   return element;
 }
 
-function video(): HTMLVideoElement {
-  const element = document.querySelector("video");
+function video(kind: PlayerKind = "watch"): HTMLVideoElement {
+  const element = playerElement(kind).querySelector("video");
   if (!element) throw new Error("no video");
   return element;
 }
 
-async function navigate(path: string, next: PlayerReport) {
+async function navigate(path: string, next: PlayerReport, { player = loadedIn } = {}) {
   history.replaceState(null, "", path);
   report = next;
+  loadedIn = player;
   document.dispatchEvent(new Event("yt-navigate-finish"));
   await vi.advanceTimersByTimeAsync(0);
 }
@@ -136,6 +153,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
   document.addEventListener(REQUEST_EVENT, answer);
   shown.length = 0;
+  shownIn.length = 0;
 });
 
 afterEach(() => {
@@ -157,13 +175,47 @@ describe("content script", () => {
     expect(shown).toEqual([{ nudge: false, speed: 2 }]);
   });
 
+  it("plays a Short at its Rule Speed in the Shorts player, leaving the watch player alone", async () => {
+    await saveSetting("channelRules", [LISP_RULE]);
+    await start(LISP, { player: "shorts" });
+    expect(video("shorts").playbackRate).toBe(2);
+    expect(video("watch").playbackRate).toBe(1);
+    expect(openPopup().last).toEqual(ready(2, { handle: "@dailylisp", kind: "channel" }));
+    expect(shownIn).toEqual(["shorts"]);
+  });
+
+  it("starts each Short over at its Rule Speed, and holds it with the Speed Lock", async () => {
+    await saveSetting("channelRules", [LISP_RULE]);
+    await start(LISP, { player: "shorts" });
+    press("KeyD", "d");
+    expect(video("shorts").playbackRate).toBe(2.5);
+    await navigate("/shorts/def", {
+      details: { ...LISP_DETAILS, videoId: "def" },
+      video: { ...LISP_VIDEO, title: "Closures", videoId: "def" },
+    });
+    expect(video("shorts").playbackRate).toBe(2);
+    video("shorts").playbackRate = 1;
+    video("shorts").dispatchEvent(new Event("ratechange"));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(video("shorts").playbackRate).toBe(2);
+  });
+
+  it("hands a Short back at 1.0x once a watch page replaces it", async () => {
+    await saveSetting("defaultSpeed", 1.5);
+    await start(LISP, { player: "shorts" });
+    expect(video("shorts").playbackRate).toBe(1.5);
+    await navigate("/watch?v=abc", LISP, { player: "watch" });
+    expect(video("shorts").playbackRate).toBe(1);
+    expect(video("watch").playbackRate).toBe(1.5);
+  });
+
   it("leaves a live stream alone, even while an ad plays before it", async () => {
     await saveSetting("defaultSpeed", 2);
     await start({ ...LISP, video: { ...LISP_VIDEO, isLive: true } });
     expect(video().playbackRate).toBe(1);
     expect(openPopup().last).toEqual({ kind: "none" });
 
-    player().classList.add("ad-showing");
+    playerElement().classList.add("ad-showing");
     await navigate("/watch?v=abc", {
       details: { ...LISP_DETAILS, isLive: true },
       video: { author: "Ad", isLive: false, title: "Buy", videoId: "ad123" },
@@ -220,7 +272,7 @@ describe("content script", () => {
     await vi.advanceTimersByTimeAsync(6000);
     expect(popup.last).toEqual({ kind: "loading" });
 
-    player().classList.remove("ad-showing");
+    playerElement().classList.remove("ad-showing");
     report = { video: { ...LISP_VIDEO, author: "" } };
     await vi.advanceTimersByTimeAsync(4900);
     expect(popup.last).toEqual({ kind: "loading" });
@@ -282,7 +334,7 @@ describe("content script", () => {
     const second = openPopup();
     expect(second.last).toEqual({ kind: "unreadable" });
     // An ad restarts the wait for the channel, so reading it no longer times out.
-    player().classList.add("ad-showing");
+    playerElement().classList.add("ad-showing");
     await vi.advanceTimersByTimeAsync(1000);
     expect(first.last).toEqual({ kind: "loading" });
     expect(second.last).toEqual({ kind: "loading" });

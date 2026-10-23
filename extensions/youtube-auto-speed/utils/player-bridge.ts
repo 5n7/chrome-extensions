@@ -1,14 +1,15 @@
 // The player's own data lives in the page's JavaScript world, out of a content script's reach. A
-// MAIN-world script answers a request event with it as a JSON string, the one kind of event detail
-// that crosses between worlds. Events dispatch synchronously, so the answer arrives before
-// `dispatchEvent` returns.
+// MAIN-world script answers a request naming a player with that player's data as JSON. Both travel
+// as strings, an event detail that crosses between worlds. Events dispatch synchronously, so the
+// answer arrives before `dispatchEvent` returns.
 
 import { isRecord } from "./is-record";
+import type { PlayerKind } from "./youtube";
 
 export const REQUEST_EVENT = "youtube-auto-speed:request";
 export const RESPONSE_EVENT = "youtube-auto-speed:response";
 
-/** The video loaded in the watch-page player right now, which may be an ad. */
+/** The video loaded in the player right now, which may be an ad. */
 export interface PlayerVideo {
   videoId: string;
   title: string;
@@ -60,14 +61,14 @@ function parseReport(json: string): PlayerReport {
 }
 
 /** Empty when no video is loaded, or before the MAIN-world script has started. */
-export function readPlayer(): PlayerReport {
+export function readPlayer(kind: PlayerKind): PlayerReport {
   let report: PlayerReport = {};
   const listener = (event: Event) => {
     const { detail } = event as CustomEvent<unknown>;
     if (typeof detail === "string") report = parseReport(detail);
   };
   document.addEventListener(RESPONSE_EVENT, listener);
-  document.dispatchEvent(new CustomEvent(REQUEST_EVENT));
+  document.dispatchEvent(new CustomEvent(REQUEST_EVENT, { detail: kind }));
   document.removeEventListener(RESPONSE_EVENT, listener);
   return report;
 }

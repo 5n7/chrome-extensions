@@ -6,7 +6,7 @@ import {
   type PlayerReport,
   type PlayerVideo,
 } from "@/utils/player-bridge";
-import { PLAYER_SELECTOR, YOUTUBE_ORIGIN } from "@/utils/youtube";
+import { isPlayerKind, PLAYERS, YOUTUBE_ORIGIN } from "@/utils/youtube";
 
 interface YouTubePlayer extends HTMLElement {
   getVideoData?: () => { author?: string; isLive?: boolean; title?: string; video_id?: string };
@@ -20,8 +20,10 @@ export default defineContentScript({
   matches: [`${YOUTUBE_ORIGIN}/*`],
   world: "MAIN",
   main() {
-    document.addEventListener(REQUEST_EVENT, () => {
-      const player = document.querySelector<YouTubePlayer>(PLAYER_SELECTOR);
+    document.addEventListener(REQUEST_EVENT, (event) => {
+      const { detail: kind } = event as CustomEvent<unknown>;
+      if (!isPlayerKind(kind)) return;
+      const player = document.querySelector<YouTubePlayer>(PLAYERS[kind].selector);
       const data = player?.getVideoData?.();
       const response = player?.getPlayerResponse?.();
       const video: PlayerVideo | undefined = data?.video_id

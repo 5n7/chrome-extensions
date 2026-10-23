@@ -2,8 +2,11 @@ import kalam from "@fontsource/kalam/files/kalam-latin-700-normal.woff2?inline";
 import { WOBBLE } from "@repo/ui/lib/wobble";
 
 import { formatSpeed, type Speed } from "./speed";
+import { findPlayer, PLAYERS, type PlayerKind } from "./youtube";
 
+const TAG = "youtube-auto-speed-indicator";
 const SHOWN_MS = 2000;
+const INSET_PX = 10;
 const SHOWN_OPACITY = "0.9";
 const RESTING_OPACITY = "0.4";
 const FONT_FAMILY = "youtube-auto-speed-kalam";
@@ -49,12 +52,23 @@ function createWobbleFilter(): SVGSVGElement {
   return svg;
 }
 
+function createCornerStyle(): HTMLStyleElement {
+  const style = document.createElement("style");
+  const belowButtons = Object.values(PLAYERS).flatMap(({ cornerButtons, selector }) =>
+    cornerButtons
+      ? `html:has(${cornerButtons.shownWhilePageHas}) ${selector} > ${TAG} { top: ${cornerButtons.bottomPx + INSET_PX}px; }`
+      : [],
+  );
+  style.textContent = [`${TAG} { top: ${INSET_PX}px; }`, ...belowButtons].join("\n");
+  return style;
+}
+
 /**
  * The hand-drawn Speed Indicator: a paper sticker in the player's top-right corner. A plain element
- * with inline `px` styles, since it renders inside YouTube's own DOM and carries no page CSS.
+ * sized in `px`, since inside YouTube's own DOM `rem` would follow YouTube's root font size.
  */
 export function createSpeedIndicator() {
-  const element = document.createElement("youtube-auto-speed-indicator");
+  const element = document.createElement(TAG);
   Object.assign(element.style, {
     color: "#18181b",
     font: `700 18px/1 ${FONT_FAMILY}, "Comic Sans MS", cursive`,
@@ -63,9 +77,8 @@ export function createSpeedIndicator() {
     padding: "6px 11px 4px",
     pointerEvents: "none",
     position: "absolute",
-    right: "10px",
+    right: `${INSET_PX}px`,
     rotate: "-4deg",
-    top: "10px",
     transition: "opacity 300ms",
     userSelect: "none",
     // Above the video, below YouTube's controls and menus.
@@ -90,14 +103,15 @@ export function createSpeedIndicator() {
     zIndex: "-1",
   });
   const label = document.createElement("span");
-  element.append(createWobbleFilter(), shadow, paper, label);
+  element.append(createCornerStyle(), createWobbleFilter(), shadow, paper, label);
 
   let fontLoaded = false;
   let restTimer: ReturnType<typeof setTimeout> | undefined;
 
   return {
-    /** Shows the Speed clearly, then rests dimmed, or hidden at 1.0x; `nudge` marks a limit hit. */
-    show(player: HTMLElement, speed: Speed, nudge = false) {
+    show(kind: PlayerKind, speed: Speed, nudge = false) {
+      const player = findPlayer(kind);
+      if (!player) return;
       if (!fontLoaded) {
         loadFont();
         fontLoaded = true;

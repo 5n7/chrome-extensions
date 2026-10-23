@@ -126,7 +126,7 @@ export function App() {
 
       {state.kind === "none" && (
         <Notice
-          detail="Shorts and live streams are left alone."
+          detail="Live streams are left alone."
           drawing
           title="No video to control on this page."
         />

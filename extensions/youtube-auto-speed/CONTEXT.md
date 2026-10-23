@@ -11,7 +11,7 @@ One of six playback speeds, 0.5x, 1.0x, 1.5x, 2.0x, 2.5x, and 3.0x, always writt
 _Avoid_: rate, playback rate, step
 
 **Target Video**:
-A regular video playing on a youtube.com watch page, including a finished live stream or premiere, the ads played within it, and its continuation in the miniplayer. Shorts, live streams while live, hover previews, and channel trailers are never Target Videos.
+A regular video playing on a youtube.com watch page, including a finished live stream or premiere, the ads played within it, and its continuation in the miniplayer; or the Short playing on a Shorts page, where each Short scrolled to is a new Target Video. Live streams while live, hover previews, and channel trailers are never Target Videos.
 _Avoid_: main video, player video
 
 **Rule Speed**:
@@ -27,7 +27,7 @@ The extension's hold on a Target Video's Speed: a change made by anything else, 
 _Avoid_: enforcement, guard
 
 **Speed Indicator**:
-The label in the top-right corner of the player showing the current Speed; it shows clearly whenever the Speed is set or changed, or a Speed Shortcut hits a limit, then dims, or hides at 1.0x. A revert by the Speed Lock never shows it.
+The label in the top-right corner of the player, below any of the player's own buttons there, showing the current Speed; it shows clearly whenever the Speed is set or changed, or a Speed Shortcut hits a limit, then dims, or hides at 1.0x. A revert by the Speed Lock never shows it.
 _Avoid_: overlay, OSD, badge
 
 ### Rules

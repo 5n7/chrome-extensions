@@ -24,14 +24,14 @@ import {
   type Target,
 } from "@/utils/target";
 import {
-  findPlayer,
   findPlayerVideo,
+  findStage,
   findTargetVideoId,
   isAdShowing,
-  isWatchContext,
   NAVIGATION_EVENTS,
   readHandle,
   YOUTUBE_ORIGIN,
+  type PlayerKind,
 } from "@/utils/youtube";
 
 // While the rules wait on a title or handle, look again soon; otherwise just often enough to notice
@@ -45,6 +45,7 @@ const LOCK_DELAY_MS = 100;
 
 /** The Target Video playing in this tab, and what this script tracks while it plays. */
 interface Session {
+  player: PlayerKind;
   target: Target;
   /** Whether the player has reported the Target Video itself, which also shows it is not live. */
   reported: boolean;
@@ -83,7 +84,7 @@ export default defineContentScript({
 
     /** The session while the extension controls the player: the Target Video itself, or an ad within it. */
     function controlled(): Session | undefined {
-      return session && (session.reported || isAdShowing()) ? session : undefined;
+      return session && (session.reported || isAdShowing(session.player)) ? session : undefined;
     }
 
     function timedOut({ readingSince }: Session): boolean {
@@ -123,10 +124,10 @@ export default defineContentScript({
     function holdSpeed() {
       clearTimeout(lockTimer);
       lockTimer = setTimeout(() => {
-        const video = findPlayerVideo();
-        const applied = controlled()?.applied;
-        if (!video || applied === undefined) return;
-        if (video.playbackRate !== applied) video.playbackRate = applied;
+        const current = controlled();
+        if (current?.applied === undefined) return;
+        const video = findPlayerVideo(current.player);
+        if (video && video.playbackRate !== current.applied) video.playbackRate = current.applied;
       }, LOCK_DELAY_MS);
     }
 
@@ -137,9 +138,8 @@ export default defineContentScript({
     function apply(nudge = false) {
       const current = controlled();
       if (!current) return;
-      const player = findPlayer();
-      const video = findPlayerVideo();
-      if (!player || !video) return;
+      const video = findPlayerVideo(current.player);
+      if (!video) return;
       const speed = currentSpeed(current.target, settings);
       const changed = speed !== current.applied;
       if (changed) {
@@ -147,7 +147,7 @@ export default defineContentScript({
         video.playbackRate = speed;
       }
       if (changed || nudge) {
-        indicator.show(player, speed, nudge);
+        indicator.show(current.player, speed, nudge);
       } else if (video.playbackRate !== speed) {
         holdSpeed();
       }
@@ -155,7 +155,7 @@ export default defineContentScript({
 
     /** Ends the Target Video, handing the player back to YouTube's normal speed if it was changed. */
     function release() {
-      const video = findPlayerVideo();
+      const video = session && findPlayerVideo(session.player);
       if (video && session?.applied !== undefined) video.playbackRate = 1;
       clearTimeout(lockTimer);
       session = undefined;
@@ -180,13 +180,16 @@ export default defineContentScript({
 
     function sync() {
       clearTimeout(pollTimer);
-      // Elsewhere no Target Video can play, so the player is not worth asking.
-      const report = isWatchContext() ? readPlayer() : {};
-      const videoId = findTargetVideoId(report, session?.target.videoId);
-      if (videoId !== session?.target.videoId) {
+      const stage = findStage();
+      const report = stage ? readPlayer(stage.player) : {};
+      const currentTargetId =
+        session?.player === stage?.player ? session?.target.videoId : undefined;
+      const videoId = stage && findTargetVideoId(stage, report, currentTargetId);
+      if (session?.player !== stage?.player || videoId !== currentTargetId) {
         release();
-        if (videoId !== undefined) {
+        if (stage && videoId !== undefined) {
           session = {
+            player: stage.player,
             readingSince: performance.now(),
             reported: false,
             target: startTarget(videoId),
@@ -194,7 +197,7 @@ export default defineContentScript({
         }
       }
       // Reading the video can only start once the ads before it are over.
-      if (session && isAdShowing()) session.readingSince = performance.now();
+      if (session && isAdShowing(session.player)) session.readingSince = performance.now();
       if (report.video) learn(report.video, report.details);
       apply();
       synced = true;
@@ -248,8 +251,9 @@ export default defineContentScript({
       document,
       "ratechange",
       (event) => {
-        if (event.target !== findPlayerVideo()) return;
-        if (controlled()?.applied !== undefined) holdSpeed();
+        const current = controlled();
+        if (current?.applied === undefined) return;
+        if (event.target === findPlayerVideo(current.player)) holdSpeed();
       },
       { capture: true },
     );
